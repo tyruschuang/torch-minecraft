@@ -39,7 +39,7 @@ export default function BedrockResult(props) {
         lineHeight={2}
         sx={{ overflowX: "auto" }}
       >
-        <MinecraftFormatted html={data.motd.html} />
+        <MinecraftFormatted value={data.motd} />
       </Box>
     ),
     Edition: (

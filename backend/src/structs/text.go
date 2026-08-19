@@ -3,6 +3,7 @@ package structs
 import (
 	"encoding/json"
 	"fmt"
+	stdhtml "html"
 	"regexp"
 	"strings"
 	"torch/src/utils"
@@ -177,7 +178,8 @@ func Html(str string) string {
 				}
 			}
 		}
-		textString := strings.ReplaceAll(segment.Text, " ", "&nbsp;")
+		textString := stdhtml.EscapeString(segment.Text)
+		textString = strings.ReplaceAll(textString, " ", "&nbsp;")
 		htmlOutput.WriteString(fmt.Sprintf("<span style=\"%s\">%s</span>", styleString, textString))
 	}
 

@@ -62,7 +62,7 @@ export default function JavaResult(props) {
           borderColor: "divider",
         }}
       >
-        <MinecraftFormatted html={data.description.html} />
+        <MinecraftFormatted value={data.description} />
       </Box>
     ),
     Version: (
@@ -117,7 +117,7 @@ export default function JavaResult(props) {
                 lineHeight={2}
                 letterSpacing={0.5}
               >
-                <MinecraftFormatted html={player.name.html} />
+                <MinecraftFormatted value={player.name} />
               </Typography>
             ))}
           </Box>
