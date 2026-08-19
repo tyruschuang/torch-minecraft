@@ -1,166 +1,178 @@
+import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import {
   Box,
   Button,
   Chip,
   Container,
-  Divider,
+  Link,
   Stack,
   Typography,
-  Link,
 } from "@mui/material";
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import { servers } from "../app/servers";
-import Search from "./search";
 import Info from "./info";
+import Search from "./search";
+import Title from "./title";
 
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-}
-
-const serverList = servers;
-
-export default function Home() {
-  const nav = useNavigate();
-
-  const [javaServers, setJavaServers] = useState([]);
-  const [bedrockServers, setBedrockServers] = useState([]);
-
-  useEffect(() => {
-    shuffleArray(serverList.bedrock);
-    shuffleArray(serverList.java);
-
-    setBedrockServers(serverList.bedrock.slice(0, 4));
-    setJavaServers(serverList.java.slice(0, 4));
-  }, []);
-
-  function serversDisplay(arr, type) {
-    return (
-      <Grid2 xs={12} md={6}>
-        <Stack direction="column" spacing={2}>
-          {arr.map((server, index) => (
-            <Button
-              key={index}
-              variant="outlined"
-              color="custom"
-              fullWidth
-              onClick={() => {
-                nav(`/search/${type}/${server.ip}`);
+function ServerList({ items, type }) {
+  return (
+    <Grid2 xs={12} md={6}>
+      <Stack spacing={1.5}>
+        {items.map((server) => (
+          <Button
+            key={server.ip}
+            component={RouterLink}
+            to={`/search/${type}/${server.ip}`}
+            variant="outlined"
+            color="custom"
+            fullWidth
+            sx={{
+              justifyContent: "stretch",
+              p: 0,
+              overflow: "hidden",
+              bgcolor: "rgba(255, 255, 255, 0.018)",
+              "&:hover .server-arrow": {
+                color: "primary.main",
+                transform: "translateX(3px)",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "auto minmax(0, 1fr) auto",
+                alignItems: "center",
+                gap: { xs: 1.25, sm: 1.75 },
+                width: "100%",
+                px: { xs: 1.5, sm: 2 },
+                py: 1.75,
+                textAlign: "left",
               }}
             >
-              <Grid2
-                xs={12}
+              <Chip
+                color={type === "java" ? "primary" : "secondary"}
+                label={type}
+                variant="outlined"
+                size="small"
                 sx={{
-                  display: "flex",
-                  flexDirection: { xs: "column", sm: "row" },
-                  alignItems: "center",
-                  justifyContent: "flex-start",
+                  fontFamily: '"Fira Mono", monospace',
+                  fontSize: 10,
+                  height: 24,
                 }}
-                padding={{ xs: 1, sm: 2 }}
-              >
-                <Box display="flex" alignItems="center">
-                  <Chip
-                    color={type === "java" ? "primary" : "secondary"}
-                    label={type}
-                    variant="outlined"
-                    size="small"
-                    sx={{
-                      fontFamily: "monospace",
-                    }}
-                  />
-                  <Typography
-                    variant="h6"
-                    fontSize={"17px"}
-                    color="custom.text"
-                    fontFamily="roboto, sans-serif"
-                    fontWeight="bold"
-                    sx={{
-                      marginLeft: "10px",
-                    }}
-                  >
-                    {server.name}
-                  </Typography>
-                </Box>
+              />
+              <Box minWidth={0}>
                 <Typography
-                  component="p"
-                  fontFamily="Minecraft"
+                  color="text.primary"
+                  fontWeight={700}
+                  fontSize={15}
+                  noWrap
+                >
+                  {server.name}
+                </Typography>
+                <Typography
+                  color="text.secondary"
+                  fontFamily='"Fira Mono", monospace'
                   fontSize={12}
-                  sx={{
-                    marginLeft: { sm: "auto" },
-                    marginTop: { xs: 1, sm: 0 },
-                  }}
+                  noWrap
                 >
                   {server.ip}
                 </Typography>
-              </Grid2>
-            </Button>
-          ))}
-        </Stack>
-      </Grid2>
-    );
-  }
+              </Box>
+              <ArrowForwardRounded
+                className="server-arrow"
+                sx={{
+                  color: "text.secondary",
+                  transition: "color 180ms ease, transform 180ms ease",
+                }}
+              />
+            </Box>
+          </Button>
+        ))}
+      </Stack>
+    </Grid2>
+  );
+}
 
+export default function Home() {
   return (
-    <Container maxWidth="xl">
+    <Container maxWidth="lg">
+      <Title />
       <Search type="Java" ip="" />
-      <Box component="h2" color="inherit">
-        Explore some of the hottest servers right now!
-      </Box>
-      <Grid2 container spacing={2}>
-        {serversDisplay(javaServers, "java")}
-        {serversDisplay(bedrockServers, "bedrock")}
-      </Grid2>
-      <Divider
-        sx={{
-          marginTop: 6,
-          marginBottom: 2,
-        }}
-      />
-      <Info
-        title="About"
-        subtitle="A quick understanding of Torch and what we do"
-      />
-      <Typography>
-        Welcome to Torch, the premier online tool for Minecraft server
-        information lookup. Our platform allows you to quickly and easily access
-        information about any Java or Bedrock server. With our API, developers
-        can integrate Torch's powerful server lookup capabilities into their own
-        projects with ease. Our API boasts a short cache duration of just 2
-        minutes, ensuring that your data is always up-to-date.
-        <br />
-        <br />
-        At Torch, we pride ourselves on our cutting-edge technology. Our website
-        is built using React and Material-UI, while our API is built with Go. We
-        communicate with Minecraft servers using the official networking
-        protocol, ensuring that our data is always accurate and reliable. If
-        you're interested in contributing to the project, we encourage you to
-        check out our code on{" "}
-        <Link
-          href="https://github.com/orgs/torch-minecraft/repositories"
-          target="_blank"
-          rel="noopener noreferrer"
+
+      <Box component="section" aria-labelledby="popular-servers-heading">
+        <Typography
+          id="popular-servers-heading"
+          component="h2"
+          variant="h2"
+          sx={{ mb: 1, fontSize: { xs: 30, sm: 36 } }}
         >
-          Github
-        </Link>{" "}
-        and join our community of developers.
-        <br />
-        <br />
-        If you're looking to use Torch's API in your project, head over to our{" "}
-        <Link href="/api">API</Link> page to learn more. Our API is designed to
-        be developer-friendly, with clear documentation and easy-to-use
-        endpoints. Whether you're building a bot to check server statuses or
-        trying to obtain server icons, Torch's API has everything you need to
-        get started.
-        <br />
-        <br />
-        We hope you enjoy using Torch as much as we've enjoyed building it. If
-        you have any questions or feedback, please don't hesitate to contact us.
-        Thank you for choosing Torch!
-      </Typography>
+          Try a popular server
+        </Typography>
+        <Typography
+          color="text.secondary"
+          sx={{ mb: 3, maxWidth: 680, lineHeight: 1.65 }}
+        >
+          Pick a known server to see the full status response, or enter any
+          address above.
+        </Typography>
+        <Grid2 container spacing={2}>
+          <ServerList items={servers.java.slice(0, 4)} type="java" />
+          <ServerList items={servers.bedrock.slice(0, 4)} type="bedrock" />
+        </Grid2>
+      </Box>
+
+      <Box
+        component="section"
+        aria-labelledby="about-heading"
+        sx={{
+          mt: { xs: 8, md: 10 },
+          pt: { xs: 1, md: 2 },
+          borderTop: 1,
+          borderColor: "divider",
+        }}
+      >
+        <Info
+          id="about-heading"
+          title="About Torch"
+          subtitle="A focused Minecraft server lookup tool with a public API."
+        />
+        <Stack
+          spacing={2}
+          sx={{
+            maxWidth: "72ch",
+            color: "text.secondary",
+            fontSize: 16,
+            lineHeight: 1.8,
+          }}
+        >
+          <Typography color="inherit" lineHeight="inherit">
+            Torch checks live Java and Bedrock server status, including player
+            counts, MOTDs, versions, icons, and network latency.
+          </Typography>
+          <Typography color="inherit" lineHeight="inherit">
+            The interface is built with React and Material UI. The Go API talks
+            directly to Minecraft servers using their status protocols, then
+            briefly caches responses to keep repeat lookups fast.
+          </Typography>
+          <Typography color="inherit" lineHeight="inherit">
+            Developers can use the{" "}
+            <Link component={RouterLink} to="/api" fontWeight={600}>
+              public API
+            </Link>
+            , and contributors can explore the project on{" "}
+            <Link
+              href="https://github.com/tyruschuang/torch-minecraft"
+              target="_blank"
+              rel="noopener noreferrer"
+              fontWeight={600}
+            >
+              GitHub
+            </Link>
+            .
+          </Typography>
+        </Stack>
+      </Box>
     </Container>
   );
 }

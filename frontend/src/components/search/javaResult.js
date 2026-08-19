@@ -1,17 +1,14 @@
-import { ArrowDropDown, ArrowDropUp } from "@mui/icons-material";
+import ExpandLessRounded from "@mui/icons-material/ExpandLessRounded";
+import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import { Box, Button, Chip, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import MinecraftFormatted from "../util/format";
 import { renderComponents } from "./searchResult";
 
 export default function JavaResult(props) {
   const { data } = props;
-
   const [openPlayerList, setOpenPlayerList] = useState(false);
-
-  useEffect(() => {
-    setOpenPlayerList(false);
-  }, []);
+  const playerSample = data.players.sample || [];
 
   const components = {
     Status: (
@@ -35,7 +32,22 @@ export default function JavaResult(props) {
         {data.port}
       </Typography>
     ),
-    Icon: <Box component={"img"} src={data.icon} />,
+    Icon: data.icon ? (
+      <Box
+        component="img"
+        src={data.icon}
+        alt={`${data.host} server icon`}
+        width={64}
+        height={64}
+        sx={{
+          display: "block",
+          borderRadius: 1,
+          imageRendering: "pixelated",
+        }}
+      />
+    ) : (
+      <Typography color="text.secondary">Not provided</Typography>
+    ),
     MOTD: (
       <Box
         backgroundColor="search.background"
@@ -45,7 +57,9 @@ export default function JavaResult(props) {
         fontFamily="Minecraft"
         lineHeight={2}
         sx={{
-          overflowY: "scroll",
+          overflowX: "auto",
+          border: 1,
+          borderColor: "divider",
         }}
       >
         <MinecraftFormatted html={data.description.html} />
@@ -67,11 +81,13 @@ export default function JavaResult(props) {
           <Typography component="p" fontFamily="Minecraft" fontSize={13}>
             {data.players.online} / {data.players.max}
           </Typography>
-          {data.players.sample.length > 0 && (
+          {playerSample.length > 0 && (
             <Button
               variant="outlined"
               color="w"
-              endIcon={openPlayerList ? <ArrowDropDown /> : <ArrowDropUp />}
+              endIcon={
+                openPlayerList ? <ExpandLessRounded /> : <ExpandMoreRounded />
+              }
               onClick={() => setOpenPlayerList(!openPlayerList)}
               sx={{
                 textTransform: "none",
@@ -92,7 +108,7 @@ export default function JavaResult(props) {
             borderRadius={1}
             paddingLeft={4}
           >
-            {data.players.sample.map((player) => (
+            {playerSample.map((player) => (
               <Typography
                 component="p"
                 fontFamily="Minecraft"

@@ -1,14 +1,14 @@
-import { ArrowDropDown, ArrowDropUp } from "@mui/icons-material";
+import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
-  Button,
   Chip,
   Container,
-  Divider,
   Stack,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/default-highlight";
 import { stackoverflowDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { apiBaseUrl, endpoints, sections } from "../app/api";
@@ -16,104 +16,143 @@ import Info from "./info";
 import Title from "./title";
 import Copy from "./util/copy";
 
-function APISection(props) {
+function APISection({ description, title }) {
   return (
-    <>
-      <Box
+    <Box component="section" sx={{ mt: 5 }}>
+      <Typography
         component="h3"
-        color="inherit"
-        fontSize={25}
-        marginTop={5}
-        marginBottom={1}
+        variant="h3"
+        sx={{ mb: 1.5, color: "text.primary", fontSize: 24 }}
       >
-        {props.title}
+        {title}
+      </Typography>
+      <Box
+        sx={{
+          maxWidth: "72ch",
+          color: "text.secondary",
+          "& .MuiTypography-root": {
+            color: "inherit",
+            lineHeight: 1.75,
+          },
+        }}
+      >
+        {description}
       </Box>
-      <Divider />
-      {props.description}
-    </>
+    </Box>
   );
 }
 
-function APIEndpoint(props) {
-  const [open, setOpen] = useState(false);
+function APIEndpoint({ description, response, route, title }) {
+  const endpointUrl = `${apiBaseUrl}/${route}`;
 
   return (
-    <Box border={1} borderRadius={1} borderColor="search.main" marginBottom={2}>
-      <Button
-        fullWidth
-        color="custom"
+    <Accordion
+      disableGutters
+      elevation={0}
+      sx={{
+        mb: 1.5,
+        border: 1,
+        borderColor: "divider",
+        borderRadius: "12px !important",
+        bgcolor: "rgba(255, 255, 255, 0.018)",
+        overflow: "hidden",
+        "&::before": {
+          display: "none",
+        },
+        "&.Mui-expanded": {
+          borderColor: "rgba(99, 216, 255, 0.32)",
+        },
+      }}
+    >
+      <AccordionSummary
+        expandIcon={<ExpandMoreRounded />}
         sx={{
-          textTransform: "none",
-          padding: 2,
-          display: "flex",
-          alignItems: "center",
-          backgroundColor: "search.background",
-        }}
-        onClick={() => {
-          setOpen(!open);
+          minHeight: 68,
+          px: { xs: 2, sm: 2.5 },
+          "& .MuiAccordionSummary-content": {
+            alignItems: "center",
+            gap: 1.5,
+            my: 1.5,
+          },
         }}
       >
-        <Box
+        <Chip
+          size="small"
+          label="GET"
+          color="success"
+          variant="outlined"
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: "100%",
-          }}
-        >
-          <Typography color="white" fontWeight="bold" fontSize={17}>
-            {props.title}
-          </Typography>
-          {open ? <ArrowDropUp /> : <ArrowDropDown />}
-        </Box>
-      </Button>
-      <Box display={open ? "block" : "none"}>
-        <Divider
-          sx={{
-            marginBottom: 2,
+            fontFamily: '"Fira Mono", monospace',
+            fontWeight: 500,
+            fontSize: 10,
           }}
         />
-        {props.description}
-        <Stack direction="row" paddingLeft={2}>
+        <Typography
+          component="h3"
+          sx={{ color: "text.primary", fontSize: 16, fontWeight: 700 }}
+        >
+          {title}
+        </Typography>
+      </AccordionSummary>
+      <AccordionDetails sx={{ px: { xs: 2, sm: 2.5 }, pb: 2.5 }}>
+        <Box
+          sx={{
+            color: "text.secondary",
+            "& .MuiTypography-root": {
+              color: "inherit",
+              lineHeight: 1.7,
+            },
+          }}
+        >
+          {description}
+        </Box>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          alignItems={{ xs: "flex-start", sm: "center" }}
+          gap={1.25}
+          sx={{
+            mt: 2.5,
+            p: 1.5,
+            borderRadius: 2,
+            bgcolor: "rgba(99, 216, 255, 0.055)",
+            border: 1,
+            borderColor: "rgba(99, 216, 255, 0.15)",
+          }}
+        >
           <Chip
             size="small"
             label="GET"
             color="success"
             sx={{
-              fontWeight: "bold",
-              fontSize: 14,
+              fontWeight: 700,
+              fontSize: 11,
             }}
           />
-          <Box width="75%">
-            <Typography
-              component="p"
-              marginLeft={1}
-              color="custom.main"
-              fontSize={16}
-              sx={{
-                wordWrap: "break-word",
-              }}
-            >
-              {`${apiBaseUrl}/${props.route}`}
-            </Typography>
-          </Box>
+          <Typography
+            component="code"
+            color="text.secondary"
+            fontFamily='"Fira Mono", monospace'
+            fontSize={13}
+            sx={{ overflowWrap: "anywhere" }}
+          >
+            {endpointUrl}
+          </Typography>
         </Stack>
-        <Divider
-          sx={{
-            marginTop: 2,
-          }}
-        />
-        <Typography component="h1" fontWeight="bold" fontSize={18} padding={2}>
-          Example Response
+        <Typography
+          component="h4"
+          sx={{ mt: 3, mb: 1.5, color: "text.primary", fontWeight: 700 }}
+        >
+          Example response
         </Typography>
-        <Box component="div" position="relative" padding={2} marginTop={-4}>
+        <Box position="relative">
           <Copy
-            text={JSON.stringify(props.response, null, 4)}
+            text={JSON.stringify(response, null, 2)}
             sx={{
               position: "absolute",
-              right: 25,
-              top: 40,
+              right: 8,
+              top: 8,
               zIndex: 1,
+              bgcolor: "rgba(9, 9, 8, 0.78)",
             }}
           />
           <SyntaxHighlighter
@@ -125,22 +164,31 @@ function APIEndpoint(props) {
             }}
             language="json"
             style={stackoverflowDark}
+            customStyle={{
+              margin: 0,
+              maxHeight: 520,
+              borderRadius: 10,
+              background: "#0b0b0a",
+              fontSize: 12,
+              lineHeight: 1.65,
+            }}
           >
-            {JSON.stringify(props.response, null, 4)}
+            {JSON.stringify(response, null, 2)}
           </SyntaxHighlighter>
         </Box>
-      </Box>
-    </Box>
+      </AccordionDetails>
+    </Accordion>
   );
 }
 
 export default function API() {
   return (
-    <Container maxWidth="xl">
-      <Title />
+    <Container maxWidth="lg">
+      <Title compact />
       <Info
+        id="api-heading"
         title="API"
-        subtitle="Documentation on how to use the Torch API in your project"
+        subtitle="Use the same live Minecraft status data in your own project."
       />
       {sections.map((section) => (
         <APISection
@@ -150,15 +198,15 @@ export default function API() {
         />
       ))}
       <Info
+        id="endpoints-heading"
         title="Endpoints"
-        subtitle="A list of all the endpoints available in the Torch API"
+        subtitle="Expand an endpoint for its route, behavior, and example response."
       />
       {endpoints.map((endpoint) => (
         <APIEndpoint
           key={endpoint.title}
           title={endpoint.title}
           route={endpoint.route}
-          example={endpoint.example}
           description={endpoint.description}
           response={endpoint.response}
         />

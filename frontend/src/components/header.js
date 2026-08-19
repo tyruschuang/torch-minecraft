@@ -1,6 +1,5 @@
 import GitHubIcon from "@mui/icons-material/GitHub";
-import MenuIcon from "@mui/icons-material/Menu";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import MenuIcon from "@mui/icons-material/MenuRounded";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -9,13 +8,20 @@ import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Toolbar from "@mui/material/Toolbar";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import * as React from "react";
+import { useState } from "react";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 
-const pages = ["faq", "api"];
+const pages = [
+  { label: "Home", path: "/" },
+  { label: "FAQ", path: "/faq" },
+  { label: "API", path: "/api" },
+];
 
 function Header() {
-  const [anchorElNav, setAnchorElNav] = React.useState(null);
+  const [anchorElNav, setAnchorElNav] = useState(null);
+  const location = useLocation();
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -26,127 +32,151 @@ function Header() {
   };
 
   return (
-    <AppBar position="static">
-      <Container maxWidth="xl">
-        <Toolbar>
+    <AppBar
+      position="sticky"
+      color="transparent"
+      sx={{
+        bgcolor: "rgba(9, 9, 8, 0.92)",
+        borderBottom: 1,
+        borderColor: "divider",
+        backdropFilter: "blur(16px)",
+      }}
+    >
+      <Container maxWidth="lg">
+        <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 72 } }}>
           <Box
-            component="a"
-            href="/"
+            component={RouterLink}
+            to="/"
+            aria-label="Torch home"
             sx={{
-              flexGrow: { md: 0, xs: 9999999 },
               display: "flex",
-              color: "inherit",
-              textDecoration: "none",
               alignItems: "center",
+              gap: 1.25,
+              color: "text.primary",
+              textDecoration: "none",
+              flexShrink: 0,
             }}
           >
             <Box
               component="img"
               src="/logo.png"
+              alt=""
+              width={28}
+              height={28}
               sx={{
-                mr: 1,
-                maxHeight: "27px",
+                objectFit: "contain",
+                filter: "drop-shadow(0 4px 8px rgba(255, 174, 32, 0.24))",
               }}
             />
             <Typography
-              variant="h6"
-              noWrap
+              component="span"
               sx={{
-                mr: 2,
-                fontFamily: "monospace",
+                fontFamily: '"Fira Mono", monospace',
                 fontWeight: 700,
-                letterSpacing: 1,
-                color: "inherit",
-                textDecoration: "none",
+                fontSize: 18,
+                letterSpacing: "0.05em",
               }}
             >
               torch
             </Typography>
           </Box>
+
           <Box
             sx={{
-              flexGrow: 1,
+              ml: 4,
               display: { xs: "none", md: "flex" },
               alignItems: "center",
+              gap: 0.5,
             }}
           >
             {pages.map((page) => (
               <Button
-                key={page}
-                onClick={handleCloseNavMenu}
+                key={page.path}
+                component={RouterLink}
+                to={page.path}
                 sx={{
-                  my: 2,
-                  color: "white",
-                  display: "block",
-                  textAlign: "center",
-                  fontWeight: "bold",
-                  textTransform: "none",
+                  color:
+                    location.pathname === page.path
+                      ? "primary.main"
+                      : "text.secondary",
+                  px: 1.5,
+                  "&:hover": {
+                    color: "text.primary",
+                    bgcolor: "rgba(255, 255, 255, 0.045)",
+                  },
                 }}
-                href={page === "Home" ? "/" : `/${page.toLowerCase()}`}
               >
-                {page}
+                {page.label}
               </Button>
             ))}
           </Box>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            onClick={() => window.open("https://github.com/orgs/torch-minecraft/repositories", "_blank")}
-          >
-            <GitHubIcon />
-          </IconButton>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            sx={{ marginLeft: "auto" }}
-            onClick={() => window.open("https://twitter.com/", "_blank")}
-          >
-            <TwitterIcon />
-          </IconButton>
-          <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
+
+          <Box flexGrow={1} />
+
+          <Tooltip title="View source on GitHub">
             <IconButton
-              size="large"
-              aria-controls="menu-appbar"
+              component="a"
+              href="https://github.com/tyruschuang/torch-minecraft"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View Torch source on GitHub"
+              sx={{
+                color: "text.secondary",
+                "&:hover": {
+                  color: "text.primary",
+                  bgcolor: "rgba(255, 255, 255, 0.055)",
+                },
+              }}
+            >
+              <GitHubIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Box sx={{ display: { xs: "block", md: "none" }, ml: 0.5 }}>
+            <IconButton
+              aria-label="Open navigation"
+              aria-controls={anchorElNav ? "mobile-navigation" : undefined}
+              aria-expanded={Boolean(anchorElNav)}
               aria-haspopup="true"
               onClick={handleOpenNavMenu}
-              color="inherit"
+              sx={{ color: "text.primary" }}
             >
               <MenuIcon />
             </IconButton>
             <Menu
-              id="menu-appbar"
+              id="mobile-navigation"
               anchorEl={anchorElNav}
               anchorOrigin={{
                 vertical: "bottom",
-                horizontal: "left",
+                horizontal: "right",
               }}
               keepMounted
               transformOrigin={{
                 vertical: "top",
-                horizontal: "left",
+                horizontal: "right",
               }}
               open={Boolean(anchorElNav)}
               onClose={handleCloseNavMenu}
-              sx={{
-                display: { xs: "block", md: "none" },
+              PaperProps={{
+                sx: {
+                  mt: 1,
+                  minWidth: 180,
+                  border: 1,
+                  borderColor: "divider",
+                  bgcolor: "background.paper",
+                },
               }}
             >
               {pages.map((page) => (
-                <MenuItem key={page} onClick={handleCloseNavMenu}>
-                  <Typography textAlign="center">
-                    <Box
-                      component="a"
-                      sx={{
-                        color: "inherit",
-                        textDecoration: "none",
-                      }}
-                      href={page === "Home" ? "/" : `/${page.toLowerCase()}`}
-                    >
-                      {page}
-                    </Box>
-                  </Typography>
+                <MenuItem
+                  key={page.path}
+                  component={RouterLink}
+                  to={page.path}
+                  selected={location.pathname === page.path}
+                  onClick={handleCloseNavMenu}
+                  sx={{ minHeight: 48 }}
+                >
+                  <Typography fontWeight={600}>{page.label}</Typography>
                 </MenuItem>
               ))}
             </Menu>

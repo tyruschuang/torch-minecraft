@@ -2,8 +2,8 @@ import { Typography } from "@mui/material";
 import axios from "axios";
 
 const specialWordStyle = {
-	color: "#f9b31f",
-	fontFamily: "monospace",
+	color: "#ffc247",
+	fontFamily: '"Fira Mono", monospace',
 };
 
 export const sections = [
@@ -248,6 +248,7 @@ export const apiBaseUrl = (
 
 const api = axios.create({
 	baseURL: apiBaseUrl,
+  timeout: 20000,
 });
 
 export default api;

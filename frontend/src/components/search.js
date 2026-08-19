@@ -1,103 +1,105 @@
-import { Button, Divider, MenuItem, Select, TextField } from "@mui/material";
-import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
-import { useCallback, useEffect, useRef, useState } from "react";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import {
+  Box,
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+} from "@mui/material";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Title from "./title";
 
-export default function Search(props) {
-  const nav = useNavigate();
-
-  const [originalIp, setOriginalIp] = useState(props.ip);
-  const [originalType, setOriginalType] = useState(props.type);
-
-  const [type, setType] = useState(props.type);
-  const [ip, setIP] = useState(props.ip);
-
-  const enterDelayRef = useRef(false);
-
-  const handleSubmit = useCallback(
-    (selectedType, selectedIp) => {
-      if (selectedIp === "") return;
-      setOriginalIp(selectedIp);
-      setOriginalType(selectedType);
-
-      nav(`/search/${selectedType.toLowerCase()}/${selectedIp}`);
-    },
-    [nav],
-  );
+export default function Search({
+  type: initialType,
+  ip: initialIp,
+  onRefresh,
+}) {
+  const navigate = useNavigate();
+  const [type, setType] = useState(initialType.toLowerCase());
+  const [ip, setIp] = useState(initialIp);
 
   useEffect(() => {
-    function handleKeyDown(event) {
-      if (event.key === "Enter") {
-        if (enterDelayRef.current) return;
-        enterDelayRef.current = true;
-        setTimeout(() => {
-          enterDelayRef.current = false;
-        }, 3000);
-        handleSubmit(type, ip);
-      }
+    setType(initialType.toLowerCase());
+    setIp(initialIp);
+  }, [initialIp, initialType]);
+
+  const trimmedIp = ip.trim();
+  const isCurrentServer =
+    trimmedIp === initialIp && type === initialType.toLowerCase();
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (!trimmedIp) return;
+
+    if (isCurrentServer) {
+      onRefresh?.();
+      return;
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleSubmit, type, ip]);
+    navigate(`/search/${type}/${encodeURIComponent(trimmedIp)}`);
+  };
 
   return (
-    <>
-      <Title />
-      <Grid2 container spacing={2}>
-        <Grid2 xs={12} md={2}>
-          <Select
-            variant="outlined"
-            fullWidth
-            displayEmpty
-            onChange={(event) => {
-              setType(event.target.value);
-            }}
-            defaultValue={
-              props.type.charAt(0).toUpperCase() + props.type.slice(1)
-            }
-          >
-            <MenuItem value="Java">Java</MenuItem>
-            <MenuItem value="Bedrock">Bedrock</MenuItem>
-          </Select>
-        </Grid2>
-        <Grid2 xs={12} md={8}>
-          <TextField
-            label="Server IP"
-            variant="outlined"
-            fullWidth
-            onChange={(event) => {
-              setIP(event.target.value);
-            }}
-            defaultValue={props.ip}
-          />
-        </Grid2>
-        <Grid2 xs={12} md={2}>
-          <Button
-            type="submit"
-            variant="outlined"
-            fullWidth
-            size="large"
-            onClick={() => handleSubmit(type, ip)}
-            sx={{
-              height: "56px",
-            }}
-            disabled={ip === "" || (ip === originalIp && type === originalType)}
-          >
-            Search
-          </Button>
-        </Grid2>
-      </Grid2>
-      <Divider
-        sx={{
-          marginTop: "40px",
-          marginBottom: "40px",
+    <Box
+      component="form"
+      aria-label="Minecraft server lookup"
+      onSubmit={handleSubmit}
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "minmax(0, 1fr)",
+          md: "180px minmax(0, 1fr) auto",
+        },
+        gap: 1.5,
+        my: { xs: 4, sm: 5 },
+        p: { xs: 2, sm: 2.5 },
+        border: 1,
+        borderColor: "divider",
+        borderRadius: 3,
+        bgcolor: "rgba(18, 18, 16, 0.82)",
+        boxShadow: "0 18px 54px rgba(0, 0, 0, 0.24)",
+      }}
+    >
+      <FormControl fullWidth>
+        <InputLabel id="server-edition-label">Edition</InputLabel>
+        <Select
+          labelId="server-edition-label"
+          label="Edition"
+          value={type}
+          onChange={(event) => setType(event.target.value)}
+        >
+          <MenuItem value="java">Java</MenuItem>
+          <MenuItem value="bedrock">Bedrock</MenuItem>
+        </Select>
+      </FormControl>
+      <TextField
+        label="Server address"
+        placeholder="mc.hypixel.net"
+        value={ip}
+        onChange={(event) => setIp(event.target.value)}
+        fullWidth
+        autoComplete="off"
+        inputProps={{
+          autoCapitalize: "none",
+          spellCheck: false,
         }}
       />
-    </>
+      <Button
+        type="submit"
+        variant="contained"
+        color="primary"
+        endIcon={<SearchRounded />}
+        disabled={!trimmedIp}
+        sx={{
+          minHeight: 56,
+          px: { xs: 3, md: 3.5 },
+          whiteSpace: "nowrap",
+        }}
+      >
+        Check status
+      </Button>
+    </Box>
   );
 }

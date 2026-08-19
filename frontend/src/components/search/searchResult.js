@@ -1,22 +1,24 @@
-import { ArrowDropDown, ArrowDropUp } from "@mui/icons-material";
+import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
   Box,
-  Button,
   Chip,
   CircularProgress,
   Container,
-  Divider,
-  Stack,
+  Paper,
   Typography,
 } from "@mui/material";
-import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/default-highlight";
 import { stackoverflowDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { apiBaseUrl } from "../../app/api";
 import status from "../../app/status";
 import Search from "../search";
+import Title from "../title";
 import Copy from "../util/copy";
 import BedrockResult from "./bedrockResult";
 import JavaResult from "./javaResult";
@@ -24,61 +26,68 @@ import Offline from "./offline";
 
 export function renderComponents(components) {
   return (
-    <Grid2 container spacing={1} padding={2}>
-      {Object.entries(components).map(([key, value], index) => (
-        <React.Fragment key={index}>
-          <Grid2 md={2} xs={12}>
-            <Typography
-              component="p"
-              fontFamily="Poppins, sans-serif"
-              fontWeight="bold"
-            >
-              {key.replace("_", " ")}
-            </Typography>
-          </Grid2>
-          <Grid2 md={10} xs={12}>
+    <Box component="dl" sx={{ m: 0 }}>
+      {Object.entries(components).map(([key, value], index, entries) => (
+        <Box
+          key={key}
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "150px minmax(0, 1fr)" },
+            gap: { xs: 0.75, sm: 2 },
+            alignItems: "start",
+            py: 2.25,
+            borderBottom: index === entries.length - 1 ? 0 : 1,
+            borderColor: "divider",
+          }}
+        >
+          <Typography
+            component="dt"
+            sx={{
+              color: "text.secondary",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            {key.replace(/_/g, " ")}
+          </Typography>
+          <Box component="dd" sx={{ m: 0, minWidth: 0 }}>
             {value}
-          </Grid2>
-          {index !== Object.entries(components).length - 1 ? (
-            <Grid2
-              xs={12}
-              sx={{
-                marginTop: 1,
-                marginBottom: 1,
-              }}
-            >
-              <Divider />
-            </Grid2>
-          ) : null}
-        </React.Fragment>
+          </Box>
+        </Box>
       ))}
-    </Grid2>
+    </Box>
   );
 }
 
 export default function SearchResult() {
-  const [online, setOnline] = useState(false);
-  const [finishedLoading, setFinishedLoading] = useState(false);
-
-  const [data, setData] = useState({});
-
-  const [apiDropdown, setApiDropdown] = useState(false);
-
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { serverType, ip } = useParams();
-
   const apiUrl = `${apiBaseUrl}/status/${serverType}/${ip}`;
 
   useEffect(() => {
     let cancelled = false;
-    setFinishedLoading(false);
+    setData(null);
+    setError(false);
+    setLoading(true);
 
     async function loadStatus() {
-      const result = await status(ip, serverType);
-      if (cancelled) return;
-
-      setOnline(Boolean(result && !result.offline));
-      setData(result);
-      setFinishedLoading(true);
+      try {
+        const result = await status(ip, serverType);
+        if (!cancelled) {
+          setData(result);
+        }
+      } catch {
+        if (!cancelled) {
+          setError(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     }
 
     loadStatus();
@@ -86,149 +95,158 @@ export default function SearchResult() {
     return () => {
       cancelled = true;
     };
-  }, [ip, serverType]);
+  }, [ip, refreshKey, serverType]);
 
   return (
-    <Container
-      maxWidth="xl"
-      sx={{
-        marginBottom: 5,
-      }}
-    >
-      <Search type={serverType} ip={ip} />
-      {!finishedLoading ? (
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
+    <Container maxWidth="lg">
+      <Title compact />
+      <Search
+        type={serverType}
+        ip={ip}
+        onRefresh={() => setRefreshKey((key) => key + 1)}
+      />
+
+      {loading && (
+        <Paper
+          variant="outlined"
+          role="status"
+          aria-live="polite"
+          sx={{
+            display: "flex",
+            minHeight: 190,
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 2,
+            borderColor: "divider",
+            bgcolor: "rgba(255, 255, 255, 0.018)",
+          }}
         >
-          <CircularProgress
-            sx={{
-              marginTop: 5,
-              marginBottom: 5,
-            }}
-          />
-        </Box>
-      ) : (
+          <CircularProgress size={26} />
+          <Typography color="text.secondary">Checking {ip}&hellip;</Typography>
+        </Paper>
+      )}
+
+      {!loading && error && (
+        <Alert
+          severity="error"
+          variant="outlined"
+          sx={{
+            py: 1.5,
+            borderRadius: 2,
+            "& .MuiAlert-message": {
+              lineHeight: 1.6,
+            },
+          }}
+        >
+          Torch could not reach the status API. Wait a moment, then try your
+          search again.
+        </Alert>
+      )}
+
+      {!loading && !error && data && (
         <>
-          <Box border={1} borderRadius={1} borderColor="search.main">
-            <Box padding={2}>
-              {online ? (
-                serverType === "bedrock" ? (
-                  <BedrockResult data={data} />
-                ) : (
-                  <JavaResult data={data} />
-                )
-              ) : (
-                <Offline data={data} />
-              )}
-            </Box>
-          </Box>
-          <>
-            <Divider
+          <Paper
+            variant="outlined"
+            sx={{
+              px: { xs: 2, sm: 3 },
+              borderColor: "divider",
+              bgcolor: "rgba(255, 255, 255, 0.018)",
+              boxShadow: "0 18px 54px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            {data.offline ? (
+              <Offline data={data} />
+            ) : serverType === "bedrock" ? (
+              <BedrockResult data={data} />
+            ) : (
+              <JavaResult data={data} />
+            )}
+          </Paper>
+
+          <Accordion
+            disableGutters
+            elevation={0}
+            sx={{
+              mt: 3,
+              border: 1,
+              borderColor: "divider",
+              borderRadius: "12px !important",
+              bgcolor: "rgba(255, 255, 255, 0.018)",
+              overflow: "hidden",
+              "&::before": {
+                display: "none",
+              },
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreRounded />}
               sx={{
-                marginTop: 4,
-              }}
-            />
-            <Box
-              border={1}
-              borderRadius={1}
-              borderColor="search.main"
-              marginTop={4}
-            >
-              <Button
-                fullWidth
-                color="custom"
-                sx={{
-                  textTransform: "none",
-                  padding: 2,
-                  display: "flex",
+                minHeight: 64,
+                px: { xs: 2, sm: 2.5 },
+                "& .MuiAccordionSummary-content": {
                   alignItems: "center",
-                  backgroundColor: "search.background",
+                  gap: 1.25,
+                },
+              }}
+            >
+              <Chip
+                size="small"
+                label="GET"
+                color="success"
+                variant="outlined"
+                sx={{
+                  fontFamily: '"Fira Mono", monospace',
+                  fontSize: 10,
                 }}
-                onClick={() => {
-                  setApiDropdown(!apiDropdown);
-                }}
+              />
+              <Typography fontWeight={700}>
+                Use this response in code
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: { xs: 2, sm: 2.5 }, pb: 2.5 }}>
+              <Typography
+                component="code"
+                color="text.secondary"
+                fontFamily='"Fira Mono", monospace'
+                fontSize={13}
+                sx={{ display: "block", mb: 2, overflowWrap: "anywhere" }}
               >
-                <Box
+                {apiUrl}
+              </Typography>
+              <Box position="relative">
+                <Copy
+                  text={JSON.stringify(data, null, 2)}
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    width: "100%",
-                  }}
-                >
-                  <Typography color="white" fontWeight="bold">
-                    API Usage
-                  </Typography>
-                  {apiDropdown ? <ArrowDropUp /> : <ArrowDropDown />}
-                </Box>
-              </Button>
-              <Box display={apiDropdown ? "block" : "none"}>
-                <Divider
-                  sx={{
-                    marginBottom: 2,
+                    position: "absolute",
+                    right: 8,
+                    top: 8,
+                    zIndex: 1,
+                    bgcolor: "rgba(9, 9, 8, 0.78)",
                   }}
                 />
-                <Stack direction="row" paddingLeft={2}>
-                  <Chip
-                    size="small"
-                    label="GET"
-                    color="success"
-                    sx={{
-                      fontWeight: "bold",
-                    }}
-                  />
-                  <Box width="75%">
-                    <Typography
-                      component="p"
-                      marginLeft={1}
-                      color="custom.main"
-                      sx={{
-                        wordWrap: "break-word",
-                      }}
-                    >
-                      {apiUrl}
-                    </Typography>
-                  </Box>
-                </Stack>
-                <Divider
-                  sx={{
-                    marginTop: 2,
+                <SyntaxHighlighter
+                  lineProps={{
+                    style: {
+                      wordBreak: "break-all",
+                      whiteSpace: "pre-wrap",
+                    },
                   }}
-                />
-                <Box
-                  component="div"
-                  position="relative"
-                  padding={2}
-                  paddingTop={1}
+                  language="json"
+                  style={stackoverflowDark}
+                  customStyle={{
+                    margin: 0,
+                    maxHeight: 520,
+                    borderRadius: 10,
+                    background: "#0b0b0a",
+                    fontSize: 12,
+                    lineHeight: 1.65,
+                  }}
                 >
-                  <Copy
-                    text={JSON.stringify(data, null, 4)}
-                    sx={{
-                      position: "absolute",
-                      right: 25,
-                      top: 40,
-                      zIndex: 1,
-                    }}
-                  />
-                  <SyntaxHighlighter
-                    lineProps={{
-                      style: {
-                        wordBreak: "break-all",
-                        whiteSpace: "pre-wrap",
-                      },
-                    }}
-                    language="json"
-                    style={stackoverflowDark}
-                  >
-                    {JSON.stringify(data, null, 4)}
-                  </SyntaxHighlighter>
-                </Box>
+                  {JSON.stringify(data, null, 2)}
+                </SyntaxHighlighter>
               </Box>
-            </Box>
-          </>
+            </AccordionDetails>
+          </Accordion>
         </>
       )}
     </Container>

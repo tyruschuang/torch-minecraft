@@ -1,8 +1,8 @@
 import { Typography } from "@mui/material";
 
 const specialWordStyle = {
-  color: "#f9b31f",
-  fontFamily: "monospace",
+  color: "#ffc247",
+  fontFamily: '"Fira Mono", monospace',
 };
 
 export const questions = [
@@ -27,7 +27,7 @@ export const questions = [
     ),
   },
   {
-    question: "What is the difference Java and Bedrock?",
+    question: "What is the difference between Java and Bedrock?",
     answer: (
       <Typography>
         <span style={specialWordStyle}>Java</span> and{" "}
@@ -41,13 +41,11 @@ export const questions = [
     ),
   },
   {
-    question: "What is Torch coded in?",
+    question: "What is Torch built with?",
     answer: (
       <Typography>
-        The Torch website is coded using{" "}
-        <span style={specialWordStyle}>ReactJS</span> and the Material UI
-        framework. The backend is coded in the high performance language{" "}
-        <span style={specialWordStyle}>GoLang</span>, also known as{" "}
+        The Torch website uses <span style={specialWordStyle}>React</span> and
+        Material UI. The backend is built with{" "}
         <span style={specialWordStyle}>Go</span>.
       </Typography>
     ),
@@ -90,8 +88,8 @@ export const questions = [
     question: "Where is Torch and the Torch API hosted?",
     answer: (
       <Typography>
-        The Torcch website and Torch API are both hosted on the East Coast in
-        Ohio.
+        The site is served by Vercel's network, and the API currently runs in
+        Vercel's Washington, D.C. region.
       </Typography>
     ),
   },

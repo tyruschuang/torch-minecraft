@@ -1,68 +1,92 @@
-import { ArrowDropDown, ArrowDropUp } from "@mui/icons-material";
-import { Box, Button, Typography } from "@mui/material";
-import { Container } from "@mui/system";
-import { useState } from "react";
+import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Container,
+  Typography,
+} from "@mui/material";
 import { questions } from "../app/faq";
-import InfoSection from "./info";
+import Info from "./info";
 import Title from "./title";
 
-function FaqSection(props) {
-  const { question, answer } = props;
-  const [open, setOpen] = useState(false);
-
+function FaqSection({ answer, index, question }) {
+  const contentId = `faq-content-${index}`;
+  const headerId = `faq-header-${index}`;
   return (
-    <Box border={1} borderRadius={1} borderColor="search.main" marginBottom={2}>
-      <Button
-        fullWidth
-        color="custom"
+    <Accordion
+      disableGutters
+      elevation={0}
+      sx={{
+        mb: 1.5,
+        border: 1,
+        borderColor: "divider",
+        borderRadius: "12px !important",
+        bgcolor: "rgba(255, 255, 255, 0.018)",
+        overflow: "hidden",
+        "&::before": {
+          display: "none",
+        },
+        "&.Mui-expanded": {
+          borderColor: "rgba(255, 194, 71, 0.34)",
+        },
+      }}
+    >
+      <AccordionSummary
+        expandIcon={<ExpandMoreRounded />}
+        aria-controls={contentId}
+        id={headerId}
         sx={{
-          backgroundColor: "search.background",
-          textTransform: "none",
-          padding: 2,
-          display: "flex",
-          alignItems: "center",
-        }}
-        onClick={() => {
-          setOpen(!open);
+          minHeight: 64,
+          px: { xs: 2, sm: 2.5 },
+          "& .MuiAccordionSummary-content": {
+            my: 1.5,
+          },
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: "100%",
-          }}
+        <Typography
+          component="h3"
+          sx={{ color: "text.primary", fontSize: 16, fontWeight: 700 }}
         >
-          <Typography color="white" fontWeight="bold">
-            {question}
-          </Typography>
-          {open ? <ArrowDropUp /> : <ArrowDropDown />}
-        </Box>
-      </Button>
-      <Box
-        display={open ? "flex" : "none"}
-        padding={2}
-        alignItems="center"
-        borderTop={1}
-        borderColor="search.main"
+          {question}
+        </Typography>
+      </AccordionSummary>
+      <AccordionDetails
+        id={contentId}
+        aria-labelledby={headerId}
+        sx={{
+          px: { xs: 2, sm: 2.5 },
+          pt: 0,
+          pb: 2.5,
+          color: "text.secondary",
+          "& .MuiTypography-root": {
+            color: "inherit",
+            lineHeight: 1.75,
+          },
+        }}
       >
         {answer}
-      </Box>
-    </Box>
+      </AccordionDetails>
+    </Accordion>
   );
 }
 
 export default function Faq() {
   return (
-    <Container maxWidth="xl">
-      <Title />
-      <InfoSection
+    <Container maxWidth="md">
+      <Title compact />
+      <Info
+        id="faq-heading"
         title="FAQ"
-        subtitle="A collection of answers to commonly asked questions"
+        subtitle="Straight answers to common questions about Torch and Minecraft server status."
       />
-      {questions.map((question) => (
-        <FaqSection question={question.question} answer={question.answer} />
+      {questions.map((question, index) => (
+        <FaqSection
+          key={question.question}
+          index={index}
+          question={question.question}
+          answer={question.answer}
+        />
       ))}
     </Container>
   );

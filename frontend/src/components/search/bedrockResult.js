@@ -32,9 +32,12 @@ export default function BedrockResult(props) {
         backgroundColor="search.background"
         padding={2}
         borderRadius={1}
+        border={1}
+        borderColor="divider"
         fontSize={13}
         fontFamily="Minecraft"
         lineHeight={2}
+        sx={{ overflowX: "auto" }}
       >
         <MinecraftFormatted html={data.motd.html} />
       </Box>
@@ -65,12 +68,22 @@ export default function BedrockResult(props) {
       </Typography>
     ),
     Server_ID: (
-      <Typography component="p" fontFamily="Minecraft" fontSize={13}>
+      <Typography
+        component="p"
+        fontFamily="Minecraft"
+        fontSize={13}
+        sx={{ overflowWrap: "anywhere" }}
+      >
         {data.server_id}
       </Typography>
     ),
     Server_GUID: (
-      <Typography component="p" fontFamily="Minecraft" fontSize={13}>
+      <Typography
+        component="p"
+        fontFamily="Minecraft"
+        fontSize={13}
+        sx={{ overflowWrap: "anywhere" }}
+      >
         {data.server_guid}
       </Typography>
     ),

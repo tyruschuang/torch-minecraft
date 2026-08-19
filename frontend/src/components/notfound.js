@@ -1,39 +1,47 @@
+import ExploreOffRounded from "@mui/icons-material/ExploreOffRounded";
 import { Box, Button, Container, Typography } from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
 import Title from "./title";
 
 export default function NotFound() {
   return (
-    <Container maxWidth="xl">
-      <Title />
+    <Container maxWidth="lg">
+      <Title compact />
       <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        flexDirection="column"
-        margin={15}
+        sx={{
+          display: "flex",
+          minHeight: 300,
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          py: { xs: 8, md: 12 },
+          textAlign: "center",
+        }}
       >
-        <Typography variant="h2" fontFamily="Poppins" fontSize={35}>
-          Oops! Looks like you got lost!
+        <ExploreOffRounded
+          sx={{ mb: 2, color: "primary.main", fontSize: 44 }}
+        />
+        <Typography
+          component="h2"
+          variant="h2"
+          sx={{ fontSize: { xs: 32, sm: 40 }, textWrap: "balance" }}
+        >
+          This route went offline.
+        </Typography>
+        <Typography
+          color="text.secondary"
+          sx={{ mt: 1.5, maxWidth: 480, lineHeight: 1.7 }}
+        >
+          The page does not exist, but the server lookup is still ready.
         </Typography>
         <Button
-          sx={{
-            textTransform: "none",
-            margin: 3,
-          }}
-          variant="outlined"
+          component={RouterLink}
+          to="/"
+          sx={{ mt: 3, px: 3 }}
+          variant="contained"
           size="large"
-          onClick={() => {
-            window.location.href = "/";
-          }}
         >
-          <Typography
-            variant="h2"
-            fontFamily="Poppins"
-            fontSize={20}
-            padding={2}
-          >
-            Let's get you back home
-          </Typography>
+          Back to server search
         </Button>
       </Box>
     </Container>
