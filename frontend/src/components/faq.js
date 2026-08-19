@@ -73,7 +73,7 @@ function FaqSection({ answer, index, question }) {
 
 export default function Faq() {
   return (
-    <Container maxWidth="md">
+    <Container maxWidth="lg">
       <Title compact />
       <Info
         id="faq-heading"
