@@ -242,8 +242,12 @@ export const endpoints = [
 	},
 ];
 
+export const apiBaseUrl = (
+	process.env.REACT_APP_API_URL || "http://localhost:8000"
+).replace(/\/+$/, "");
+
 const api = axios.create({
-	baseURL: process.env.REACT_APP_API_URL || "http://localhost:3005",
+	baseURL: apiBaseUrl,
 });
 
 export default api;

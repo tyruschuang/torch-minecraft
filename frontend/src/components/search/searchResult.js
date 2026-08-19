@@ -14,6 +14,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/default-highlight";
 import { stackoverflowDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { apiBaseUrl } from "../../app/api";
 import status from "../../app/status";
 import Search from "../search";
 import Copy from "../util/copy";
@@ -67,8 +68,7 @@ export default function SearchResult() {
 
   const location = useLocation();
 
-  const apiUrl =
-    process.env.REACT_APP_API_URL + "status/" + serverType + "/" + ip;
+  const apiUrl = `${apiBaseUrl}/status/${serverType}/${ip}`;
 
   async function fetchData() {
     return await status(ip, serverType);

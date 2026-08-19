@@ -11,12 +11,10 @@ import {
 import React, { useState } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/default-highlight";
 import { stackoverflowDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { endpoints, sections } from "../app/api";
+import { apiBaseUrl, endpoints, sections } from "../app/api";
 import Info from "./info";
 import Title from "./title";
 import Copy from "./util/copy";
-
-const apiUrl = process.env.REACT_APP_API_URL;
 
 function APISection(props) {
   return (
@@ -96,7 +94,7 @@ function APIEndpoint(props) {
                 wordWrap: "break-word",
               }}
             >
-              {apiUrl + props.route}
+              {`${apiBaseUrl}/${props.route}`}
             </Typography>
           </Box>
         </Stack>
