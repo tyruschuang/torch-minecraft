@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+const javaStatusProtocolVersion int32 = 772
 
 func FetchJava(host string, port uint16) (*structs.JavaStatus, error) {
 	originalHost, originalPort := host, port
@@ -70,7 +73,7 @@ func sendHandshake(conn net.Conn, host string, port uint16) error {
 		return err
 	}
 
-	if _, err := utils.WriteVarInt(47, buf); err != nil {
+	if _, err := utils.WriteVarInt(javaStatusProtocolVersion, buf); err != nil {
 		return err
 	}
 
@@ -102,12 +105,21 @@ func sendStatusRequest(conn net.Conn) error {
 func readStatusResponse(conn net.Conn) (structs.RawJavaStatus, error) {
 	var rawJavaResponse structs.RawJavaStatus
 
-	_, _, err := utils.ReadVarInt(conn)
+	packetLength, _, err := utils.ReadVarInt(conn)
 	if err != nil {
 		return rawJavaResponse, err
 	}
+	if packetLength < 0 || packetLength > 1<<20 {
+		return rawJavaResponse, fmt.Errorf("status packet length %d is outside the supported range", packetLength)
+	}
 
-	packetId, _, err := utils.ReadVarInt(conn)
+	packet := make([]byte, packetLength)
+	if _, err := io.ReadFull(conn, packet); err != nil {
+		return rawJavaResponse, err
+	}
+	packetReader := bytes.NewReader(packet)
+
+	packetId, _, err := utils.ReadVarInt(packetReader)
 	if err != nil {
 		return rawJavaResponse, err
 	}
@@ -116,7 +128,7 @@ func readStatusResponse(conn net.Conn) (structs.RawJavaStatus, error) {
 		return rawJavaResponse, fmt.Errorf("unexpected packet ID (expected 0x00, got 0x%02x)", packetId)
 	}
 
-	response, err := utils.ReadString(conn)
+	response, err := utils.ReadString(packetReader)
 	if err != nil {
 		return rawJavaResponse, err
 	}
@@ -140,12 +152,21 @@ func sendPing(conn net.Conn, pingPayload int64) error {
 }
 
 func readPong(conn net.Conn, pingPayload int64) error {
-	_, _, err := utils.ReadVarInt(conn)
+	packetLength, _, err := utils.ReadVarInt(conn)
 	if err != nil {
 		return err
 	}
+	if packetLength < 0 || packetLength > 64 {
+		return fmt.Errorf("pong packet length %d is outside the supported range", packetLength)
+	}
 
-	packetId, _, err := utils.ReadVarInt(conn)
+	packet := make([]byte, packetLength)
+	if _, err := io.ReadFull(conn, packet); err != nil {
+		return err
+	}
+	packetReader := bytes.NewReader(packet)
+
+	packetId, _, err := utils.ReadVarInt(packetReader)
 	if err != nil {
 		return err
 	}
@@ -155,7 +176,7 @@ func readPong(conn net.Conn, pingPayload int64) error {
 	}
 
 	var returnedPayload int64
-	if err := binary.Read(conn, binary.BigEndian, &returnedPayload); err != nil {
+	if err := binary.Read(packetReader, binary.BigEndian, &returnedPayload); err != nil {
 		return err
 	}
 
@@ -167,7 +188,6 @@ func readPong(conn net.Conn, pingPayload int64) error {
 }
 
 func createJavaStatus(originalHost string, originalPort uint16, host string, port uint16, rawJavaResponse structs.RawJavaStatus, pingStart time.Time) *structs.JavaStatus {
-	// Process data
 	description := structs.Parse(rawJavaResponse.Description)
 
 	samplePlayers := make([]structs.Player, 0)
@@ -210,13 +230,15 @@ func createJavaStatus(originalHost string, originalPort uint16, host string, por
 			Online: rawJavaResponse.Players.Online,
 			Sample: samplePlayers,
 		},
-		Description: description,
-		Icon:        rawJavaResponse.Favicon,
-		SrvRecord:   srv,
-		Latency:     time.Duration(time.Since(pingStart).Milliseconds()),
-		ModInfo:     nil,
-		ObtainedAt:  time.Now(),
-		ExpiresAt:   time.Now().Add(time.Duration(statusCacheTime)),
+		Description:         description,
+		Icon:                rawJavaResponse.Favicon,
+		EnforcesSecureChat:  rawJavaResponse.EnforcesSecureChat,
+		PreventsChatReports: rawJavaResponse.PreventsChatReports,
+		SrvRecord:           srv,
+		Latency:             time.Duration(time.Since(pingStart).Milliseconds()),
+		ModInfo:             nil,
+		ObtainedAt:          time.Now(),
+		ExpiresAt:           time.Now().Add(time.Duration(statusCacheTime)),
 	}
 
 	if len(rawJavaResponse.ModInfo.Type) > 0 {

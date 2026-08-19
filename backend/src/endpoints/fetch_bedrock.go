@@ -32,22 +32,17 @@ func fetchBedrock(host string, port uint16) (*structs.BedrockStatus, error) {
 	reader := bufio.NewReader(conn)
 	pingStart := time.Now()
 
-	// Unconnected Ping
 	buf := &bytes.Buffer{}
-	// Packet ID
 	if err := buf.WriteByte(0x01); err != nil {
 		return nil, err
 	}
-	// Time
-	if err := binary.Write(buf, binary.LittleEndian, time.Now().UnixMilli()); err != nil {
+	if err := binary.Write(buf, binary.BigEndian, time.Now().UnixMilli()); err != nil {
 		return nil, err
 	}
-	// Magic
 	if _, err := buf.Write(bedrockMagic); err != nil {
 		return nil, err
 	}
-	// Client GUID
-	if err := binary.Write(buf, binary.LittleEndian, uint64(0)); err != nil {
+	if err := binary.Write(buf, binary.BigEndian, uint64(0)); err != nil {
 		return nil, err
 	}
 
@@ -55,7 +50,6 @@ func fetchBedrock(host string, port uint16) (*structs.BedrockStatus, error) {
 		return nil, err
 	}
 
-	// Unconnected Pong
 	var packetId byte
 	var pingTime, serverGUID int64
 	var serverNameLength uint16
@@ -64,7 +58,7 @@ func fetchBedrock(host string, port uint16) (*structs.BedrockStatus, error) {
 		return nil, err
 	}
 	if packetId != 0x1C {
-		return nil, fmt.Errorf("unexpected packet ID (expected 0x00, got 0x%02x)", packetId)
+		return nil, fmt.Errorf("unexpected packet ID (expected 0x1c, got 0x%02x)", packetId)
 	}
 	if err := binary.Read(reader, binary.BigEndian, &pingTime); err != nil {
 		return nil, err
@@ -73,14 +67,17 @@ func fetchBedrock(host string, port uint16) (*structs.BedrockStatus, error) {
 		return nil, err
 	}
 	data := make([]byte, 16)
-	if _, err := reader.Read(data); err != nil {
+	if _, err := io.ReadFull(reader, data); err != nil {
 		return nil, err
+	}
+	if !bytes.Equal(data, bedrockMagic) {
+		return nil, fmt.Errorf("unexpected RakNet magic")
 	}
 	if err := binary.Read(reader, binary.BigEndian, &serverNameLength); err != nil {
 		return nil, err
 	}
 	serverName := make([]byte, serverNameLength)
-	if _, err := reader.Read(serverName); err != nil {
+	if _, err := io.ReadFull(reader, serverName); err != nil {
 		return nil, err
 	}
 
@@ -164,18 +161,15 @@ func fetchBedrock(host string, port uint16) (*structs.BedrockStatus, error) {
 
 func FetchBedrockHandler(c *gin.Context) {
 	ip := c.Param("ip")
-	var port int
+	port := 19132
 
 	if strings.Contains(ip, ":") {
-		split := strings.Split(ip, ":")
+		split := strings.SplitN(ip, ":", 2)
 		ip = split[0]
 		p, err := strconv.Atoi(split[1])
-		if err != nil {
-			port = 19132
+		if err == nil && p > 0 && p <= 65535 {
+			port = p
 		}
-		port = p
-	} else {
-		port = 19132
 	}
 
 	uintPort := uint16(port)

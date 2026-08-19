@@ -1,13 +1,25 @@
-import { Box } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 
 const obfuscatedCharacters =
   "abcdeghmnopqrsuwxyABCDEFGHJKLMNOPQRSTUVWXYZ0123456789#$%&";
 const safeColor = /^#[0-9a-f]{6}$/i;
+const safeShadowColor = /^#[0-9a-f]{8}$/i;
+
+function getMinecraftShadow(color) {
+  if (!safeColor.test(color)) {
+    return "#3f3f3f";
+  }
+
+  const red = Math.floor(Number.parseInt(color.slice(1, 3), 16) / 4);
+  const green = Math.floor(Number.parseInt(color.slice(3, 5), 16) / 4);
+  const blue = Math.floor(Number.parseInt(color.slice(5, 7), 16) / 4);
+  return `rgb(${red}, ${green}, ${blue})`;
+}
 
 function getSegmentStyle(styles) {
-  const style = {};
+  const style = { color: "#ffffff" };
   const textDecoration = [];
+  let shadowColor;
 
   for (const value of styles) {
     if (value.startsWith("color=")) {
@@ -23,12 +35,23 @@ function getSegmentStyle(styles) {
       textDecoration.push("underline");
     } else if (value === "strikethrough") {
       textDecoration.push("line-through");
+    } else if (value.startsWith("font=")) {
+      const font = value.slice("font=".length);
+      if (font === "minecraft:uniform") {
+        style.fontFamily = '"Fira Mono", monospace';
+      }
+    } else if (value.startsWith("shadow=")) {
+      const color = value.slice("shadow=".length);
+      if (safeShadowColor.test(color)) {
+        shadowColor = color;
+      }
     }
   }
 
   if (textDecoration.length) {
     style.textDecoration = textDecoration.join(" ");
   }
+  style.textShadow = `1px 1px 0 ${shadowColor || getMinecraftShadow(style.color)}`;
 
   return style;
 }
@@ -47,6 +70,13 @@ function obfuscate(text, frame) {
 export default function MinecraftFormatted({ value }) {
   const [frame, setFrame] = useState(0);
   const segments = useMemo(() => {
+    if (Array.isArray(value?.segments) && value.segments.length) {
+      return value.segments.map((segment, index) => ({
+        key: `segment-${index}`,
+        ...segment,
+      }));
+    }
+
     try {
       const parsed = JSON.parse(value?.json || "{}");
       const parsedSegments = Object.keys(parsed)
@@ -59,7 +89,7 @@ export default function MinecraftFormatted({ value }) {
     } catch {
       return [{ key: "fallback", text: value?.clean || "", styles: [] }];
     }
-  }, [value?.clean, value?.json]);
+  }, [value?.clean, value?.json, value?.segments]);
   const hasObfuscatedText = segments.some((segment) =>
     segment.styles?.includes("obfuscated"),
   );
@@ -80,10 +110,7 @@ export default function MinecraftFormatted({ value }) {
   }, [hasObfuscatedText]);
 
   return (
-    <Box
-      component="span"
-      sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
-    >
+    <span style={{ whiteSpace: "pre" }}>
       {segments.map((segment) => {
         const styles = Array.isArray(segment.styles) ? segment.styles : [];
         const text = styles.includes("obfuscated")
@@ -91,15 +118,11 @@ export default function MinecraftFormatted({ value }) {
           : segment.text;
 
         return (
-          <Box
-            component="span"
-            key={segment.key}
-            style={getSegmentStyle(styles)}
-          >
+          <span key={segment.key} style={getSegmentStyle(styles)}>
             {text}
-          </Box>
+          </span>
         );
       })}
-    </Box>
+    </span>
   );
 }

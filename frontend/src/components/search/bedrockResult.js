@@ -30,14 +30,18 @@ export default function BedrockResult(props) {
     MOTD: (
       <Box
         backgroundColor="search.background"
-        padding={2}
+        px={2}
+        py={1.5}
         borderRadius={1}
         border={1}
         borderColor="divider"
         fontSize={13}
         fontFamily="Minecraft"
-        lineHeight={2}
-        sx={{ overflowX: "auto" }}
+        lineHeight="18px"
+        minHeight={60}
+        display="flex"
+        alignItems="center"
+        sx={{ overflow: "hidden", color: "#ffffff" }}
       >
         <MinecraftFormatted value={data.motd} />
       </Box>

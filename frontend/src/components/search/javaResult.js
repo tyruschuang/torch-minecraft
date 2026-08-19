@@ -51,15 +51,20 @@ export default function JavaResult(props) {
     MOTD: (
       <Box
         backgroundColor="search.background"
-        padding={2}
+        px={2}
+        py={1.5}
         borderRadius={1}
         fontSize={13}
         fontFamily="Minecraft"
-        lineHeight={2}
+        lineHeight="18px"
+        minHeight={60}
+        display="flex"
+        alignItems="center"
         sx={{
-          overflowX: "auto",
+          overflow: "hidden",
           border: 1,
           borderColor: "divider",
+          color: "#ffffff",
         }}
       >
         <MinecraftFormatted value={data.description} />

@@ -15,9 +15,11 @@ type RawJavaStatus struct {
 			ID   string `json:"id"`
 		} `json:"sample"`
 	} `json:"players"`
-	Description interface{} `json:"description"`
-	Favicon        string      `json:"favicon"`
-	ModInfo     struct {
+	Description         interface{} `json:"description"`
+	Favicon             string      `json:"favicon"`
+	EnforcesSecureChat  *bool       `json:"enforcesSecureChat"`
+	PreventsChatReports *bool       `json:"preventsChatReports"`
+	ModInfo             struct {
 		List []struct {
 			ModID   string `json:"modid"`
 			Version string `json:"version"`
@@ -70,17 +72,19 @@ type SrvRecord struct {
 }
 
 type JavaStatus struct {
-	Host        string        `json:"host"`
-	Port        uint16        `json:"port"`
-	Version     Version       `json:"version"`
-	Players     Players       `json:"players"`
-	Description *ParsedText   `json:"description"`
-	Icon        string        `json:"icon"`
-	ModInfo     *ModInfo      `json:"mod_info"`
-	SrvRecord   *SrvRecord    `json:"used_srv"`
-	Latency     time.Duration `json:"latency"`
-	ObtainedAt  time.Time     `json:"obtained_at"`
-	ExpiresAt   time.Time     `json:"expires_at"`
+	Host                string        `json:"host"`
+	Port                uint16        `json:"port"`
+	Version             Version       `json:"version"`
+	Players             Players       `json:"players"`
+	Description         *ParsedText   `json:"description"`
+	Icon                string        `json:"icon"`
+	ModInfo             *ModInfo      `json:"mod_info"`
+	EnforcesSecureChat  *bool         `json:"enforces_secure_chat,omitempty"`
+	PreventsChatReports *bool         `json:"prevents_chat_reports,omitempty"`
+	SrvRecord           *SrvRecord    `json:"used_srv"`
+	Latency             time.Duration `json:"latency"`
+	ObtainedAt          time.Time     `json:"obtained_at"`
+	ExpiresAt           time.Time     `json:"expires_at"`
 }
 
 type OfflineServer struct {

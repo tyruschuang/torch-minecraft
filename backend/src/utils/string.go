@@ -1,13 +1,19 @@
 package utils
 
 import (
+	"fmt"
 	"io"
 )
+
+const maxStringLength = 1 << 20
 
 func ReadString(r io.Reader) ([]byte, error) {
 	length, _, err := ReadVarInt(r)
 	if err != nil {
 		return nil, err
+	}
+	if length < 0 || length > maxStringLength {
+		return nil, fmt.Errorf("string length %d is outside the supported range", length)
 	}
 	data := make([]byte, length)
 	if _, err := io.ReadFull(r, data); err != nil {
