@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"os"
 	"torch/src/endpoints"
 
 	"github.com/gin-contrib/cors"
@@ -8,9 +10,7 @@ import (
 )
 
 func main() {
-
 	router := gin.Default()
-
 	router.Use(cors.Default())
 
 	router.GET("/status/java/:ip", endpoints.FetchJavaHandler)
@@ -19,6 +19,12 @@ func main() {
 	router.GET("/icon/:ip", endpoints.IconHandler)
 	router.GET("/ping", endpoints.PingHandler)
 
-	router.Run(":8000")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
+	}
 
+	if err := router.Run(":" + port); err != nil {
+		log.Fatal(err)
+	}
 }

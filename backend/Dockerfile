@@ -1,4 +1,4 @@
-FROM golang:1.17
+FROM golang:1.20
 
 WORKDIR /app
 
@@ -11,6 +11,6 @@ COPY src src
 
 RUN go build -o main src/main.go
 
-EXPOSE 8080
+EXPOSE 8000
 
 CMD ["./main"]
