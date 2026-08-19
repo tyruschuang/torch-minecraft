@@ -1,5 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "go",
-  "buildCommand": "go build -o $VERCEL_OUTPUT_FILE ./src"
+  "framework": "go"
 }

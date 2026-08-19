@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY src src
 
-RUN go build -o main src/main.go
+RUN go build -o main .
 
 EXPOSE 8000
 
