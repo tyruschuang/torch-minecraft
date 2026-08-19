@@ -11,6 +11,7 @@ import {
   Chip,
   CircularProgress,
   Container,
+  Divider,
   Paper,
   Typography,
 } from "@mui/material";
@@ -165,58 +166,69 @@ export default function SearchResult() {
 
       {!loading && !error && data && (
         <>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 2,
-              mb: 2,
-            }}
-          >
-            <Box>
-              {serverType === "auto" && detectedEdition !== "auto" && (
-                <Chip
-                  label={`${detectedEdition} detected`}
-                  color={detectedEdition === "java" ? "primary" : "secondary"}
-                  variant="outlined"
-                  sx={{ textTransform: "capitalize" }}
-                />
-              )}
-            </Box>
-            <Button
-              variant="outlined"
-              color="custom"
-              startIcon={
-                isSaved ? <BookmarkRemoveRounded /> : <BookmarkAddRounded />
-              }
-              onClick={() =>
-                toggleSavedServer({
-                  ip,
-                  name: data.host || ip,
-                  type: savedType,
-                })
-              }
-            >
-              {isSaved ? "Remove from saved" : "Save server"}
-            </Button>
-          </Box>
           <Paper
             variant="outlined"
             sx={{
-              px: { xs: 2, sm: 3 },
               borderColor: "divider",
               bgcolor: "rgba(255, 255, 255, 0.018)",
               boxShadow: "0 18px 54px rgba(0, 0, 0, 0.2)",
+              overflow: "hidden",
             }}
           >
-            {data.offline ? (
-              <Offline data={data} />
-            ) : detectedEdition === "bedrock" ? (
-              <BedrockResult data={data} />
-            ) : (
-              <JavaResult data={data} />
-            )}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "stretch", sm: "center" },
+                justifyContent: "space-between",
+                gap: 1.5,
+                px: { xs: 2, sm: 3 },
+                py: 2,
+              }}
+            >
+              <Box display="flex" alignItems="center" gap={1.25}>
+                <Typography component="h2" fontWeight={700}>
+                  Server status
+                </Typography>
+                {serverType === "auto" && detectedEdition !== "auto" && (
+                  <Chip
+                    size="small"
+                    label={`${detectedEdition} detected`}
+                    color={detectedEdition === "java" ? "primary" : "secondary"}
+                    variant="outlined"
+                    sx={{ textTransform: "capitalize" }}
+                  />
+                )}
+              </Box>
+              <Button
+                size="small"
+                variant="outlined"
+                color="custom"
+                startIcon={
+                  isSaved ? <BookmarkRemoveRounded /> : <BookmarkAddRounded />
+                }
+                onClick={() =>
+                  toggleSavedServer({
+                    ip,
+                    name: data.host || ip,
+                    type: savedType,
+                  })
+                }
+                sx={{ alignSelf: { xs: "stretch", sm: "center" } }}
+              >
+                {isSaved ? "Remove from saved" : "Save server"}
+              </Button>
+            </Box>
+            <Divider />
+            <Box sx={{ px: { xs: 2, sm: 3 } }}>
+              {data.offline ? (
+                <Offline data={data} />
+              ) : detectedEdition === "bedrock" ? (
+                <BedrockResult data={data} />
+              ) : (
+                <JavaResult data={data} />
+              )}
+            </Box>
           </Paper>
 
           <Diagnostics initialDiagnostics={diagnostics} ip={ip} />
