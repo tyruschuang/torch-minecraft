@@ -12,6 +12,9 @@ import (
 
 var hexColorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
+const maxTextComponentDepth = 64
+const maxTextSegments = 2048
+
 type ParsedText struct {
 	Raw      string        `json:"raw"`
 	Clean    string        `json:"clean"`
@@ -41,10 +44,43 @@ type styledSegment struct {
 	Style textStyle
 }
 
+type legacyProfile struct {
+	Colors                 map[rune]string
+	AllowHex               bool
+	ColorResetsDecorations bool
+	Bedrock                bool
+}
+
+var javaLegacyProfile = legacyProfile{
+	Colors:                 standardLegacyColors(),
+	AllowHex:               true,
+	ColorResetsDecorations: true,
+}
+
 func Parse(object interface{}) *ParsedText {
 	styledSegments := make([]styledSegment, 0)
-	appendComponent(&styledSegments, object, textStyle{})
+	appendComponent(&styledSegments, object, textStyle{}, javaLegacyProfile, 0)
 
+	raw, ok := object.(string)
+	if !ok {
+		raw = ""
+	}
+	return parsedText(raw, styledSegments)
+}
+
+func ParseBedrock(lines []string, version string) *ParsedText {
+	styledSegments := make([]styledSegment, 0)
+	profile := bedrockLegacyProfile(version)
+	for index, line := range lines {
+		if index > 0 {
+			appendStyledText(&styledSegments, "\n", textStyle{})
+		}
+		appendLegacyText(&styledSegments, line, textStyle{}, profile)
+	}
+	return parsedText(strings.Join(lines, "\n"), styledSegments)
+}
+
+func parsedText(raw string, styledSegments []styledSegment) *ParsedText {
 	if len(styledSegments) == 0 {
 		styledSegments = append(styledSegments, styledSegment{})
 	}
@@ -59,8 +95,7 @@ func Parse(object interface{}) *ParsedText {
 		clean.WriteString(segment.Text)
 	}
 
-	raw, ok := object.(string)
-	if !ok {
+	if raw == "" {
 		raw = clean.String()
 	}
 
@@ -73,81 +108,118 @@ func Parse(object interface{}) *ParsedText {
 	}
 }
 
-func appendComponent(segments *[]styledSegment, component interface{}, inherited textStyle) {
+func appendComponent(segments *[]styledSegment, component interface{}, inherited textStyle, profile legacyProfile, depth int) {
+	if depth > maxTextComponentDepth || len(*segments) >= maxTextSegments {
+		return
+	}
+
 	switch value := component.(type) {
 	case nil:
 		return
 	case string:
-		appendLegacyText(segments, value, inherited)
+		appendLegacyText(segments, value, inherited, profile)
 	case []interface{}:
 		if len(value) == 0 {
 			return
 		}
 
-		appendComponent(segments, value[0], inherited)
+		appendComponent(segments, value[0], inherited, profile, depth+1)
 		childStyle := componentStyle(value[0], inherited)
 		for _, child := range value[1:] {
-			appendComponent(segments, child, childStyle)
+			appendComponent(segments, child, childStyle, profile, depth+1)
 		}
 	case map[string]interface{}:
 		style := applyComponentStyle(inherited, value)
-		appendComponentContent(segments, value, style)
+		appendComponentContent(segments, value, style, profile, depth)
 
 		if children, ok := value["extra"].([]interface{}); ok {
 			for _, child := range children {
-				appendComponent(segments, child, style)
+				appendComponent(segments, child, style, profile, depth+1)
 			}
 		}
-	case json.Number:
-		appendStyledText(segments, value.String(), inherited)
-	case float64, bool:
-		appendStyledText(segments, fmt.Sprint(value), inherited)
 	}
 }
 
-func appendComponentContent(segments *[]styledSegment, component map[string]interface{}, style textStyle) {
-	if text, ok := component["text"].(string); ok {
-		appendLegacyText(segments, text, style)
-		return
+func appendComponentContent(segments *[]styledSegment, component map[string]interface{}, style textStyle, profile legacyProfile, depth int) {
+	componentType, _ := component["type"].(string)
+	if !validComponentType(componentType, component) {
+		componentType = inferredComponentType(component)
 	}
 
-	if translation, ok := component["translate"].(string); ok {
+	switch componentType {
+	case "text":
+		text, _ := component["text"].(string)
+		appendLegacyText(segments, text, style, profile)
+	case "translatable":
+		translation, _ := component["translate"].(string)
 		template := translation
-		if fallback, ok := component["fallback"].(string); ok && fallback != "" {
+		if fallback, ok := component["fallback"].(string); ok {
 			template = fallback
 		}
 
 		arguments, _ := component["with"].([]interface{})
-		appendTranslation(segments, template, arguments, style)
-		return
-	}
-
-	if score, ok := component["score"].(map[string]interface{}); ok {
-		if value, ok := score["value"].(string); ok {
-			appendLegacyText(segments, value, style)
+		appendTranslation(segments, template, arguments, style, profile, depth)
+	case "score":
+		if score, ok := component["score"].(map[string]interface{}); ok {
+			value, _ := score["value"].(string)
+			appendLegacyText(segments, value, style, profile)
 		}
-		return
-	}
-
-	for _, key := range []string{"selector", "keybind", "nbt"} {
+	case "selector", "keybind", "nbt":
+		key := componentType
 		if value, ok := component[key].(string); ok {
-			appendLegacyText(segments, value, style)
-			return
+			appendLegacyText(segments, value, style, profile)
 		}
 	}
 }
 
-func appendTranslation(segments *[]styledSegment, template string, arguments []interface{}, style textStyle) {
+func validComponentType(componentType string, component map[string]interface{}) bool {
+	switch componentType {
+	case "text":
+		_, ok := component["text"].(string)
+		return ok
+	case "translatable":
+		_, ok := component["translate"].(string)
+		return ok
+	case "score":
+		_, ok := component["score"].(map[string]interface{})
+		return ok
+	case "selector", "keybind", "nbt":
+		_, ok := component[componentType].(string)
+		return ok
+	default:
+		return false
+	}
+}
+
+func inferredComponentType(component map[string]interface{}) string {
+	if _, ok := component["text"].(string); ok {
+		return "text"
+	}
+	if _, ok := component["translate"].(string); ok {
+		return "translatable"
+	}
+	if _, ok := component["score"].(map[string]interface{}); ok {
+		return "score"
+	}
+	for _, componentType := range []string{"selector", "keybind", "nbt"} {
+		if _, ok := component[componentType].(string); ok {
+			return componentType
+		}
+	}
+	return ""
+}
+
+func appendTranslation(segments *[]styledSegment, template string, arguments []interface{}, style textStyle, profile legacyProfile, depth int) {
 	nextArgument := 0
 	for cursor := 0; cursor < len(template); {
 		percentOffset := strings.IndexByte(template[cursor:], '%')
 		if percentOffset < 0 {
-			appendLegacyText(segments, template[cursor:], style)
+			appendLegacyText(segments, template[cursor:], style, profile)
 			return
 		}
 
 		percent := cursor + percentOffset
-		appendLegacyText(segments, template[cursor:percent], style)
+		appendLegacyText(segments, template[cursor:percent], style, profile)
 
 		if percent+1 < len(template) && template[percent+1] == '%' {
 			appendStyledText(segments, "%", style)
@@ -167,7 +239,7 @@ func appendTranslation(segments *[]styledSegment, template string, arguments []i
 			nextArgument++
 		}
 		if argumentIndex < len(arguments) {
-			appendComponent(segments, arguments[argumentIndex], style)
+			appendComponent(segments, arguments[argumentIndex], style, profile, depth+1)
 		}
 		cursor = percent + consumed
 	}
@@ -238,7 +310,7 @@ func applyComponentStyle(inherited textStyle, component map[string]interface{}) 
 	return style
 }
 
-func appendLegacyText(segments *[]styledSegment, value string, inherited textStyle) {
+func appendLegacyText(segments *[]styledSegment, value string, inherited textStyle, profile legacyProfile) {
 	runes := []rune(value)
 	style := inherited
 	text := strings.Builder{}
@@ -253,18 +325,20 @@ func appendLegacyText(segments *[]styledSegment, value string, inherited textSty
 
 	for index := 0; index < len(runes); {
 		marker := runes[index]
-		if marker != '§' && marker != '&' {
+		if marker != '§' {
 			text.WriteRune(marker)
 			index++
 			continue
 		}
 
-		if color, consumed, ok := legacyHexColor(runes, index); ok {
-			flush()
-			style = resetDecorations(style, inherited)
-			style.Color = color
-			index += consumed
-			continue
+		if profile.AllowHex {
+			if color, consumed, ok := legacyHexColor(runes, index); ok {
+				flush()
+				style = resetDecorations(style, inherited)
+				style.Color = color
+				index += consumed
+				continue
+			}
 		}
 
 		if index+1 >= len(runes) {
@@ -274,14 +348,14 @@ func appendLegacyText(segments *[]styledSegment, value string, inherited textSty
 		}
 
 		code := rune(strings.ToLower(string(runes[index+1]))[0])
-		if !isLegacyCode(code) {
+		if !isLegacyCode(code, profile) {
 			text.WriteRune(marker)
 			index++
 			continue
 		}
 
 		flush()
-		style = applyLegacyCode(style, inherited, code)
+		style = applyLegacyCode(style, inherited, code, profile)
 		index += 2
 	}
 
@@ -304,7 +378,7 @@ func legacyHexColor(runes []rune, index int) (string, int, bool) {
 	for offset := 0; offset < 6; offset++ {
 		markerIndex := index + 2 + offset*2
 		digitIndex := markerIndex + 1
-		if (runes[markerIndex] != '§' && runes[markerIndex] != '&') || !isHex(runes[digitIndex]) {
+		if runes[markerIndex] != '§' || !isHex(runes[digitIndex]) {
 			return "", 0, false
 		}
 		digits = append(digits, runes[digitIndex])
@@ -313,10 +387,12 @@ func legacyHexColor(runes []rune, index int) (string, int, bool) {
 	return "#" + strings.ToLower(string(digits)), 14, true
 }
 
-func applyLegacyCode(style textStyle, inherited textStyle, code rune) textStyle {
-	if color, ok := utils.ParseColor(string(code)); ok {
-		style = resetDecorations(style, inherited)
-		style.Color = color.ToHex()
+func applyLegacyCode(style textStyle, inherited textStyle, code rune, profile legacyProfile) textStyle {
+	if color, ok := profile.Colors[code]; ok {
+		if profile.ColorResetsDecorations {
+			style = resetDecorations(style, inherited)
+		}
+		style.Color = color
 		return style
 	}
 
@@ -326,9 +402,13 @@ func applyLegacyCode(style textStyle, inherited textStyle, code rune) textStyle 
 	case 'l':
 		style.Bold = true
 	case 'm':
-		style.Strikethrough = true
+		if !profile.Bedrock {
+			style.Strikethrough = true
+		}
 	case 'n':
-		style.Underlined = true
+		if !profile.Bedrock {
+			style.Underlined = true
+		}
 	case 'o':
 		style.Italic = true
 	case 'r':
@@ -352,6 +432,9 @@ func appendStyledText(segments *[]styledSegment, text string, style textStyle) {
 
 	if len(*segments) > 0 && (*segments)[len(*segments)-1].Style == style {
 		(*segments)[len(*segments)-1].Text += text
+		return
+	}
+	if len(*segments) >= maxTextSegments {
 		return
 	}
 
@@ -493,8 +576,97 @@ func segmentsHTML(segments []styledSegment) string {
 	return output.String()
 }
 
-func isLegacyCode(value rune) bool {
-	return strings.ContainsRune("0123456789abcdefgklmnor", value)
+func standardLegacyColors() map[rune]string {
+	return map[rune]string{
+		'0': "#000000",
+		'1': "#0000aa",
+		'2': "#00aa00",
+		'3': "#00aaaa",
+		'4': "#aa0000",
+		'5': "#aa00aa",
+		'6': "#ffaa00",
+		'7': "#aaaaaa",
+		'8': "#555555",
+		'9': "#5555ff",
+		'a': "#55ff55",
+		'b': "#55ffff",
+		'c': "#ff5555",
+		'd': "#ff55ff",
+		'e': "#ffff55",
+		'f': "#ffffff",
+	}
+}
+
+func bedrockLegacyProfile(version string) legacyProfile {
+	colors := standardLegacyColors()
+	colors['g'] = "#ddd605"
+
+	materialColors := map[rune]string{
+		'h': "#e3d4d1",
+		'i': "#cecaca",
+		'j': "#443a3b",
+		'm': "#971607",
+		'n': "#b4684d",
+		'p': "#deb12d",
+		'q': "#119f36",
+		's': "#2cbaa8",
+		't': "#21497b",
+		'u': "#9a5cc6",
+		'v': "#eb7114",
+	}
+	if usesUpdatedBedrockMaterialColors(version) {
+		materialColors = map[rune]string{
+			'h': "#d9ccb8",
+			'i': "#a9b4b7",
+			'j': "#8f727d",
+			'm': "#ee222c",
+			'n': "#c87363",
+			'p': "#ffbf1e",
+			'q': "#13a045",
+			's': "#5fecff",
+			't': "#577bff",
+			'u': "#b66cdd",
+			'v': "#ff6a00",
+		}
+	}
+	for code, color := range materialColors {
+		colors[code] = color
+	}
+
+	return legacyProfile{
+		Colors:  colors,
+		Bedrock: true,
+	}
+}
+
+func usesUpdatedBedrockMaterialColors(version string) bool {
+	parts := strings.Split(version, ".")
+	numbers := make([]int, 0, len(parts))
+	for _, part := range parts {
+		number, err := strconv.Atoi(part)
+		if err != nil {
+			break
+		}
+		numbers = append(numbers, number)
+	}
+
+	if len(numbers) >= 3 && numbers[0] == 1 {
+		return numbers[1] > 26 || (numbers[1] == 26 && numbers[2] >= 50)
+	}
+	if len(numbers) >= 2 {
+		return numbers[0] > 26 || (numbers[0] == 26 && numbers[1] >= 50)
+	}
+	return false
+}
+
+func isLegacyCode(value rune, profile legacyProfile) bool {
+	if _, ok := profile.Colors[value]; ok {
+		return true
+	}
+	if value == 'k' || value == 'l' || value == 'o' || value == 'r' {
+		return true
+	}
+	return !profile.Bedrock && (value == 'm' || value == 'n')
 }
 
 func allHex(value []rune) bool {

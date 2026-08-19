@@ -31,10 +31,35 @@ func TestParseLegacyFormattingPreservesAmpersandsAndWhitespace(t *testing.T) {
 	assertSegmentStyles(t, parsed.Segments, "SUMMER EVENT", "color=#ffff55", "bold")
 }
 
+func TestParseJavaTreatsAmpersandCodesAsLiteralText(t *testing.T) {
+	parsed := Parse("A &a B")
+
+	if parsed.Clean != "A &a B" {
+		t.Fatalf("unexpected Java text: %q", parsed.Clean)
+	}
+	assertSegmentOmitsStyle(t, parsed.Segments, "A &a B", "color=#55ff55")
+}
+
 func TestParseLegacyHexColor(t *testing.T) {
 	parsed := Parse("§x§1§2§A§B§3§4RGB")
 
 	assertSegmentStyles(t, parsed.Segments, "RGB", "color=#12ab34")
+}
+
+func TestParseBedrockUsesMaterialColorsWithoutClearingFormatting(t *testing.T) {
+	parsed := ParseBedrock([]string{"§lA§mB§nC"}, "1.26.44")
+
+	assertSegmentStyles(t, parsed.Segments, "A", "bold")
+	assertSegmentStyles(t, parsed.Segments, "B", "bold", "color=#971607")
+	assertSegmentStyles(t, parsed.Segments, "C", "bold", "color=#b4684d")
+	assertSegmentOmitsStyle(t, parsed.Segments, "B", "strikethrough")
+	assertSegmentOmitsStyle(t, parsed.Segments, "C", "underline")
+}
+
+func TestParseBedrockSelectsUpdatedMaterialPalette(t *testing.T) {
+	parsed := ParseBedrock([]string{"§mRedstone"}, "1.26.50")
+
+	assertSegmentStyles(t, parsed.Segments, "Redstone", "color=#ee222c")
 }
 
 func TestParseModernComponentsInheritAndOverrideFormatting(t *testing.T) {
@@ -55,6 +80,19 @@ func TestParseModernComponentsInheritAndOverrideFormatting(t *testing.T) {
 	assertSegmentStyles(t, parsed.Segments, "Root child", "color=#12ab34", "bold")
 	assertSegmentStyles(t, parsed.Segments, " plain", "color=#12ab34", "underline")
 	assertSegmentOmitsStyle(t, parsed.Segments, " plain", "bold")
+}
+
+func TestParseExplicitComponentTypeWins(t *testing.T) {
+	parsed := Parse(map[string]interface{}{
+		"type":      "translatable",
+		"text":      "Wrong",
+		"translate": "translation.key",
+		"fallback":  "Right",
+	})
+
+	if parsed.Clean != "Right" {
+		t.Fatalf("unexpected translated text: %q", parsed.Clean)
+	}
 }
 
 func TestParseComponentArrayInheritsFirstStyle(t *testing.T) {

@@ -182,26 +182,37 @@ export const endpoints = [
 			</Typography>
 		),
 		response: {
-			server_guid: -631302060185291500,
+			server_guid: "17815442013524260113",
 			version: {
 				name: {
-					raw: "1.19.80",
-					clean: "1.19.80",
-					html: '<span><span style="">1.19.80</span></span>',
-					json: '{"1":{"text":"1.19.80","styles":[]}}',
+					raw: "1.26.44",
+					clean: "1.26.44",
+					html: '<span><span style="">1.26.44</span></span>',
+					json: '{"1":{"text":"1.26.44","styles":[]}}',
+					segments: [{ text: "1.26.44", styles: [] }],
 				},
-				protocol: 582,
+				protocol: 2168,
 			},
 			edition: "MCPE",
 			motd: {
-				raw: "§bH§fL §6LB §eSkywars §8+ 1.19.81\n&rWaterdogPE Proxy",
-				clean: "HL LB Skywars + 1.19.81\nWaterdogPE Proxy",
-				html: '<span><span style="color: #55ffff; ">H</span><span style="color: #ffffff; ">L&nbsp;</span><span style="color: #ffaa00; ">LB&nbsp;</span><span style="color: #ffff55; ">Skywars&nbsp;</span><span style="color: #555555; ">+&nbsp;1.19.81<br /></span><span style="">WaterdogPE&nbsp;Proxy</span></span>',
-				json: '{"1":{"text":"H","styles":["color=#55ffff"]},"2":{"text":"L ","styles":["color=#ffffff"]},"3":{"text":"LB ","styles":["color=#ffaa00"]},"4":{"text":"Skywars ","styles":["color=#ffff55"]},"5":{"text":"+ 1.19.81\n","styles":["color=#555555"]},"6":{"text":"WaterdogPE Proxy","styles":[]}}',
+				raw: "CraftersMC ✧ SkyBlock: End § Beyond!\n§b§lPlay Now!§r",
+				clean: "CraftersMC ✧ SkyBlock: End § Beyond!\nPlay Now!",
+				html: '<span><span style="">CraftersMC&nbsp;✧&nbsp;SkyBlock:&nbsp;End&nbsp;§&nbsp;Beyond!<br /></span><span style="color: #55ffff; font-weight: bold; ">Play&nbsp;Now!</span></span>',
+				json: '{"1":{"text":"CraftersMC ✧ SkyBlock: End § Beyond!\\n","styles":[]},"2":{"text":"Play Now!","styles":["color=#55ffff","bold"]}}',
+				segments: [
+					{
+						text: "CraftersMC ✧ SkyBlock: End § Beyond!\n",
+						styles: [],
+					},
+					{
+						text: "Play Now!",
+						styles: ["color=#55ffff", "bold"],
+					},
+				],
 			},
 			players: {
-				max: 299,
-				online: 289,
+				max: 1000,
+				online: 95,
 				sample: null,
 			},
 			server_id: "17815442013524260113",
@@ -210,7 +221,7 @@ export const endpoints = [
 			port: 19132,
 			port_ipv4: null,
 			port_ipv6: null,
-			host: "play.hyperlandsmc.net",
+			host: "play.craftersmc.net",
 			obtained_at: "2023-05-19T20:02:09.0892782-07:00",
 			expires_at: "2023-05-19T20:07:09.0892782-07:00",
 			latency: 99,

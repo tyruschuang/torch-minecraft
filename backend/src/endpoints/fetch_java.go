@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -105,19 +104,10 @@ func sendStatusRequest(conn net.Conn) error {
 func readStatusResponse(conn net.Conn) (structs.RawJavaStatus, error) {
 	var rawJavaResponse structs.RawJavaStatus
 
-	packetLength, _, err := utils.ReadVarInt(conn)
+	packetReader, err := utils.ReadPacket(conn, 1<<20)
 	if err != nil {
 		return rawJavaResponse, err
 	}
-	if packetLength < 0 || packetLength > 1<<20 {
-		return rawJavaResponse, fmt.Errorf("status packet length %d is outside the supported range", packetLength)
-	}
-
-	packet := make([]byte, packetLength)
-	if _, err := io.ReadFull(conn, packet); err != nil {
-		return rawJavaResponse, err
-	}
-	packetReader := bytes.NewReader(packet)
 
 	packetId, _, err := utils.ReadVarInt(packetReader)
 	if err != nil {
@@ -131,6 +121,9 @@ func readStatusResponse(conn net.Conn) (structs.RawJavaStatus, error) {
 	response, err := utils.ReadString(packetReader)
 	if err != nil {
 		return rawJavaResponse, err
+	}
+	if packetReader.Len() != 0 {
+		return rawJavaResponse, fmt.Errorf("status packet contains %d unexpected trailing bytes", packetReader.Len())
 	}
 
 	err = json.Unmarshal([]byte(response), &rawJavaResponse)
@@ -152,19 +145,10 @@ func sendPing(conn net.Conn, pingPayload int64) error {
 }
 
 func readPong(conn net.Conn, pingPayload int64) error {
-	packetLength, _, err := utils.ReadVarInt(conn)
+	packetReader, err := utils.ReadPacket(conn, 9)
 	if err != nil {
 		return err
 	}
-	if packetLength < 0 || packetLength > 64 {
-		return fmt.Errorf("pong packet length %d is outside the supported range", packetLength)
-	}
-
-	packet := make([]byte, packetLength)
-	if _, err := io.ReadFull(conn, packet); err != nil {
-		return err
-	}
-	packetReader := bytes.NewReader(packet)
 
 	packetId, _, err := utils.ReadVarInt(packetReader)
 	if err != nil {
@@ -182,6 +166,9 @@ func readPong(conn net.Conn, pingPayload int64) error {
 
 	if returnedPayload != pingPayload {
 		return fmt.Errorf("unexpected payload (expected %d, got %d)", pingPayload, returnedPayload)
+	}
+	if packetReader.Len() != 0 {
+		return fmt.Errorf("pong packet contains %d unexpected trailing bytes", packetReader.Len())
 	}
 
 	return nil
@@ -212,10 +199,6 @@ func createJavaStatus(originalHost string, originalPort uint16, host string, por
 			Host: host,
 			Port: port,
 		}
-	}
-
-	if rawJavaResponse.Favicon == "" {
-		rawJavaResponse.Favicon = defaultIcon
 	}
 
 	result := &structs.JavaStatus{
