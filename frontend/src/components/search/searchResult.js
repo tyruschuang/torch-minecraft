@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import React, { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/default-highlight";
 import { stackoverflowDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { apiBaseUrl } from "../../app/api";
@@ -66,32 +66,27 @@ export default function SearchResult() {
 
   const { serverType, ip } = useParams();
 
-  const location = useLocation();
-
   const apiUrl = `${apiBaseUrl}/status/${serverType}/${ip}`;
 
-  async function fetchData() {
-    return await status(ip, serverType);
-  }
-
   useEffect(() => {
+    let cancelled = false;
     setFinishedLoading(false);
-    (async () => {
-      const status = await fetchData();
-      if (
-        status === null ||
-        status === undefined ||
-        status === {} ||
-        status.offline
-      ) {
-        setOnline(false);
-      } else {
-        setOnline(true);
-      }
-      setData(status);
+
+    async function loadStatus() {
+      const result = await status(ip, serverType);
+      if (cancelled) return;
+
+      setOnline(Boolean(result && !result.offline));
+      setData(result);
       setFinishedLoading(true);
-    })();
-  }, [location.pathname]);
+    }
+
+    loadStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ip, serverType]);
 
   return (
     <Container

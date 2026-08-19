@@ -1,6 +1,6 @@
 import { Button, Divider, MenuItem, Select, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Title from "./title";
 
@@ -14,6 +14,17 @@ export default function Search(props) {
   const [ip, setIP] = useState(props.ip);
 
   const enterDelayRef = useRef(false);
+
+  const handleSubmit = useCallback(
+    (selectedType, selectedIp) => {
+      if (selectedIp === "") return;
+      setOriginalIp(selectedIp);
+      setOriginalType(selectedType);
+
+      nav(`/search/${selectedType.toLowerCase()}/${selectedIp}`);
+    },
+    [nav],
+  );
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -32,15 +43,7 @@ export default function Search(props) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [type, ip]);
-
-  async function handleSubmit(type, ip) {
-    if (ip === "") return;
-    setOriginalIp(ip);
-    setOriginalType(type);
-
-    nav(`/search/${type.toLowerCase()}/${ip}`);
-  }
+  }, [handleSubmit, type, ip]);
 
   return (
     <>
