@@ -15,6 +15,8 @@ func main() {
 
 	router.GET("/status/java/:ip", endpoints.FetchJavaHandler)
 	router.GET("/status/bedrock/:ip", endpoints.FetchBedrockHandler)
+	router.GET("/status/auto/:ip", endpoints.AutoStatusHandler)
+	router.GET("/diagnostics/:ip", endpoints.DiagnosticsHandler)
 	router.GET("/srv/:host", endpoints.SrvHandler)
 	router.GET("/icon/:ip", endpoints.IconHandler)
 	router.GET("/ping", endpoints.PingHandler)

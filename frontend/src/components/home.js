@@ -1,15 +1,19 @@
 import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
 import {
   Box,
   Button,
   Chip,
   Container,
+  IconButton,
   Link,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import { Link as RouterLink } from "react-router-dom";
+import { removeSavedServer, useSavedServers } from "../app/savedServers";
 import { servers } from "../app/servers";
 import Info from "./info";
 import Search from "./search";
@@ -94,13 +98,116 @@ function ServerList({ items, type }) {
   );
 }
 
+function SavedServerList({ items }) {
+  return (
+    <Grid2 container spacing={2}>
+      {items.map((server) => (
+        <Grid2 key={server.id} xs={12} md={6}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr) auto",
+              alignItems: "stretch",
+              border: 1,
+              borderColor: "divider",
+              borderRadius: 2,
+              overflow: "hidden",
+              bgcolor: "rgba(255, 255, 255, 0.018)",
+            }}
+          >
+            <Button
+              component={RouterLink}
+              to={`/search/${server.type}/${encodeURIComponent(server.ip)}`}
+              color="custom"
+              sx={{
+                justifyContent: "flex-start",
+                minWidth: 0,
+                px: 2,
+                py: 1.5,
+                borderRadius: 0,
+              }}
+            >
+              <Chip
+                label={server.type}
+                variant="outlined"
+                size="small"
+                color={
+                  server.type === "java"
+                    ? "primary"
+                    : server.type === "bedrock"
+                      ? "secondary"
+                      : "default"
+                }
+                sx={{
+                  mr: 1.5,
+                  fontFamily: '"Fira Mono", monospace',
+                  fontSize: 10,
+                  height: 24,
+                }}
+              />
+              <Box minWidth={0} textAlign="left">
+                <Typography color="text.primary" fontWeight={700} noWrap>
+                  {server.name}
+                </Typography>
+                <Typography
+                  color="text.secondary"
+                  fontFamily='"Fira Mono", monospace'
+                  fontSize={12}
+                  noWrap
+                >
+                  {server.ip}
+                </Typography>
+              </Box>
+            </Button>
+            <Tooltip title="Remove saved server">
+              <IconButton
+                aria-label={`Remove ${server.name} from saved servers`}
+                onClick={() => removeSavedServer(server.id)}
+                sx={{ borderRadius: 0, px: 2, color: "text.secondary" }}
+              >
+                <CloseRounded />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Grid2>
+      ))}
+    </Grid2>
+  );
+}
+
 export default function Home() {
+  const savedServers = useSavedServers();
+
   return (
     <Container maxWidth="lg">
       <Title />
-      <Search type="Java" ip="" />
+      <Search type="Auto" ip="" />
 
-      <Box component="section" aria-labelledby="popular-servers-heading">
+      {savedServers.length > 0 && (
+        <Box component="section" aria-labelledby="saved-servers-heading">
+          <Typography
+            id="saved-servers-heading"
+            component="h2"
+            variant="h2"
+            sx={{ mb: 1, fontSize: { xs: 30, sm: 36 } }}
+          >
+            Saved servers
+          </Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ mb: 3, maxWidth: 680, lineHeight: 1.65 }}
+          >
+            Your shortcuts stay in this browser and never leave your device.
+          </Typography>
+          <SavedServerList items={savedServers} />
+        </Box>
+      )}
+
+      <Box
+        component="section"
+        aria-labelledby="popular-servers-heading"
+        sx={{ mt: savedServers.length > 0 ? { xs: 7, md: 8 } : 0 }}
+      >
         <Typography
           id="popular-servers-heading"
           component="h2"
@@ -147,8 +254,9 @@ export default function Home() {
           }}
         >
           <Typography color="inherit" lineHeight="inherit">
-            Torch checks live Java and Bedrock server status, including player
-            counts, MOTDs, versions, icons, and network latency.
+            Torch auto-detects Java and Bedrock servers, checks live status, and
+            explains DNS, port, protocol, and reachability issues when a
+            connection fails.
           </Typography>
           <Typography color="inherit" lineHeight="inherit">
             The interface is built with React and Material UI. The Go API talks

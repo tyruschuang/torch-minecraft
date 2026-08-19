@@ -19,10 +19,10 @@ export const questions = [
     question: "How do I use Torch?",
     answer: (
       <Typography>
-        Simply enter the IP address of the server you want to check and select
-        the server type. Torch will then display the status of the server. If
-        you don't enter a port, then the default port for the selected server
-        version will be used.
+        Enter the server address and leave the edition on Auto detect, or choose
+        Java or Bedrock yourself. Torch will display the status and connection
+        diagnostics. If you don't enter a port, the default port for that
+        edition is used.
       </Typography>
     ),
   },

@@ -203,36 +203,21 @@ func bedrockField(fields []string, index int) string {
 }
 
 func FetchBedrockHandler(c *gin.Context) {
-	ip := c.Param("ip")
-	port := 19132
-
-	if strings.Contains(ip, ":") {
-		split := strings.SplitN(ip, ":", 2)
-		ip = split[0]
-		p, err := strconv.Atoi(split[1])
-		if err == nil && p > 0 && p <= 65535 {
-			port = p
-		}
-	}
-
-	uintPort := uint16(port)
-	cacheKey := fmt.Sprintf("%s:%d", ip, port)
-	data, err := bedrockCache.Value(cacheKey)
-	if err == nil {
-		c.JSON(200, data.Data().(*structs.BedrockStatus))
+	host, _, port, err := parseProbeAddress(c.Param("ip"))
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	fetchedData, err := fetchBedrock(ip, uintPort)
+	fetchedData, err := getBedrockStatus(host, port)
 	if err != nil {
 		c.JSON(200, structs.OfflineServer{
 			Offline: true,
-			Host:    ip,
-			Port:    uintPort,
+			Host:    host,
+			Port:    port,
 		})
 		return
 	}
 
-	bedrockCache.Add(cacheKey, statusCacheTime, fetchedData)
 	c.JSON(200, fetchedData)
 }

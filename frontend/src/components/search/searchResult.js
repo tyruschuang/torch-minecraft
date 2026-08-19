@@ -1,3 +1,5 @@
+import BookmarkAddRounded from "@mui/icons-material/BookmarkAddRounded";
+import BookmarkRemoveRounded from "@mui/icons-material/BookmarkRemoveRounded";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import {
   Accordion,
@@ -5,6 +7,7 @@ import {
   AccordionSummary,
   Alert,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Container,
@@ -16,11 +19,13 @@ import { useParams } from "react-router-dom";
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/default-highlight";
 import { stackoverflowDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { apiBaseUrl } from "../../app/api";
+import { toggleSavedServer, useSavedServers } from "../../app/savedServers";
 import status from "../../app/status";
 import Search from "../search";
 import Title from "../title";
 import Copy from "../util/copy";
 import BedrockResult from "./bedrockResult";
+import Diagnostics from "./diagnostics";
 import JavaResult from "./javaResult";
 import Offline from "./offline";
 
@@ -60,16 +65,24 @@ export function renderComponents(components) {
 }
 
 export default function SearchResult() {
+  const { serverType, ip } = useParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [detectedEdition, setDetectedEdition] = useState(serverType);
+  const [diagnostics, setDiagnostics] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { serverType, ip } = useParams();
-  const apiUrl = `${apiBaseUrl}/status/${serverType}/${ip}`;
+  const savedServers = useSavedServers();
+  const apiUrl = `${apiBaseUrl}/status/${serverType}/${encodeURIComponent(ip)}`;
+  const savedType = serverType.toLowerCase();
+  const savedId = `${savedType}:${ip.trim().toLowerCase()}`;
+  const isSaved = savedServers.some((server) => server.id === savedId);
 
   useEffect(() => {
     let cancelled = false;
     setData(null);
+    setDetectedEdition(serverType);
+    setDiagnostics(null);
     setError(false);
     setLoading(true);
 
@@ -77,7 +90,9 @@ export default function SearchResult() {
       try {
         const result = await status(ip, serverType);
         if (!cancelled) {
-          setData(result);
+          setData(result.data);
+          setDetectedEdition(result.edition);
+          setDiagnostics(result.diagnostics);
         }
       } catch {
         if (!cancelled) {
@@ -96,6 +111,11 @@ export default function SearchResult() {
       cancelled = true;
     };
   }, [ip, refreshKey, serverType]);
+
+  const apiResponse =
+    serverType === "auto"
+      ? { edition: detectedEdition, status: data, diagnostics }
+      : data;
 
   return (
     <Container maxWidth="lg">
@@ -145,6 +165,42 @@ export default function SearchResult() {
 
       {!loading && !error && data && (
         <>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+              mb: 2,
+            }}
+          >
+            <Box>
+              {serverType === "auto" && detectedEdition !== "auto" && (
+                <Chip
+                  label={`${detectedEdition} detected`}
+                  color={detectedEdition === "java" ? "primary" : "secondary"}
+                  variant="outlined"
+                  sx={{ textTransform: "capitalize" }}
+                />
+              )}
+            </Box>
+            <Button
+              variant="outlined"
+              color="custom"
+              startIcon={
+                isSaved ? <BookmarkRemoveRounded /> : <BookmarkAddRounded />
+              }
+              onClick={() =>
+                toggleSavedServer({
+                  ip,
+                  name: data.host || ip,
+                  type: savedType,
+                })
+              }
+            >
+              {isSaved ? "Remove saved" : "Save server"}
+            </Button>
+          </Box>
           <Paper
             variant="outlined"
             sx={{
@@ -156,12 +212,14 @@ export default function SearchResult() {
           >
             {data.offline ? (
               <Offline data={data} />
-            ) : serverType === "bedrock" ? (
+            ) : detectedEdition === "bedrock" ? (
               <BedrockResult data={data} />
             ) : (
               <JavaResult data={data} />
             )}
           </Paper>
+
+          <Diagnostics initialDiagnostics={diagnostics} ip={ip} />
 
           <Accordion
             disableGutters
@@ -215,7 +273,7 @@ export default function SearchResult() {
               </Typography>
               <Box position="relative">
                 <Copy
-                  text={JSON.stringify(data, null, 2)}
+                  text={JSON.stringify(apiResponse, null, 2)}
                   sx={{
                     position: "absolute",
                     right: 8,
@@ -242,7 +300,7 @@ export default function SearchResult() {
                     lineHeight: 1.65,
                   }}
                 >
-                  {JSON.stringify(data, null, 2)}
+                  {JSON.stringify(apiResponse, null, 2)}
                 </SyntaxHighlighter>
               </Box>
             </AccordionDetails>

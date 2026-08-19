@@ -139,7 +139,7 @@ export default function JavaResult(props) {
     ),
     Latency: (
       <Typography component="p" fontFamily="Minecraft" fontSize={13}>
-        {`${data.latency}ms`}
+        {data.latency >= 0 ? `${data.latency}ms` : "Not reported"}
       </Typography>
     ),
   };

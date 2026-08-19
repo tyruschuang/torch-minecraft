@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 	"time"
 
 	"torch/src/structs"
@@ -53,16 +52,12 @@ func FetchJava(host string, port uint16) (*structs.JavaStatus, error) {
 
 	pingStart := time.Now()
 	pingPayload := time.Now().UnixNano()
-
-	if err = sendPing(conn, pingPayload); err != nil {
-		return nil, err
+	latency := time.Duration(-1)
+	if sendPing(conn, pingPayload) == nil && readPong(conn, pingPayload) == nil {
+		latency = time.Duration(time.Since(pingStart).Milliseconds())
 	}
 
-	if err = readPong(conn, pingPayload); err != nil {
-		return nil, err
-	}
-
-	return createJavaStatus(originalHost, originalPort, host, port, rawJavaResponse, pingStart), nil
+	return createJavaStatus(originalHost, originalPort, host, port, rawJavaResponse, latency), nil
 }
 
 func sendHandshake(conn net.Conn, host string, port uint16) error {
@@ -174,7 +169,7 @@ func readPong(conn net.Conn, pingPayload int64) error {
 	return nil
 }
 
-func createJavaStatus(originalHost string, originalPort uint16, host string, port uint16, rawJavaResponse structs.RawJavaStatus, pingStart time.Time) *structs.JavaStatus {
+func createJavaStatus(originalHost string, originalPort uint16, host string, port uint16, rawJavaResponse structs.RawJavaStatus, latency time.Duration) *structs.JavaStatus {
 	description := structs.Parse(rawJavaResponse.Description)
 
 	samplePlayers := make([]structs.Player, 0)
@@ -218,7 +213,7 @@ func createJavaStatus(originalHost string, originalPort uint16, host string, por
 		EnforcesSecureChat:  rawJavaResponse.EnforcesSecureChat,
 		PreventsChatReports: rawJavaResponse.PreventsChatReports,
 		SrvRecord:           srv,
-		Latency:             time.Duration(time.Since(pingStart).Milliseconds()),
+		Latency:             latency,
 		ModInfo:             nil,
 		ObtainedAt:          time.Now(),
 		ExpiresAt:           time.Now().Add(time.Duration(statusCacheTime)),
@@ -255,40 +250,21 @@ func createJavaStatus(originalHost string, originalPort uint16, host string, por
 }
 
 func FetchJavaHandler(c *gin.Context) {
-	ip := c.Param("ip")
-	var port int
-
-	if strings.Contains(ip, ":") {
-		split := strings.Split(ip, ":")
-		ip = split[0]
-		p, err := strconv.Atoi(split[1])
-		if err != nil {
-			port = 25565
-		}
-		port = p
-	} else {
-		port = 25565
-	}
-
-	uintPort := uint16(port)
-
-	cacheKey := fmt.Sprintf("%s:%d", ip, port)
-	data, err := javaCache.Value(cacheKey)
-	if err == nil {
-		c.JSON(200, data.Data().(*structs.JavaStatus))
+	host, port, _, err := parseProbeAddress(c.Param("ip"))
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	fetchedData, err := FetchJava(ip, uintPort)
+	fetchedData, err := getJavaStatus(host, port)
 	if err != nil {
 		c.JSON(200, structs.OfflineServer{
 			Offline: true,
-			Host:    ip,
-			Port:    uintPort,
+			Host:    host,
+			Port:    port,
 		})
 		return
 	}
 
-	javaCache.Add(cacheKey, statusCacheTime, fetchedData)
 	c.JSON(200, fetchedData)
 }

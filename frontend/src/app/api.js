@@ -76,6 +76,98 @@ export const sections = [
 
 export const endpoints = [
 	{
+		title: "Automatic Edition Detection",
+		route: "status/auto/<ip>",
+		description: (
+			<Typography
+				fontSize={16}
+				paddingLeft={2}
+				marginBottom={2}
+				paddingRight={2}
+			>
+				Probes Java and Bedrock concurrently, then returns the first
+				detected edition, its full status response, and connection
+				diagnostics for both editions.
+			</Typography>
+		),
+		response: {
+			edition: "java",
+			status: {
+				host: "hypixel.net",
+				port: 25565,
+				version: {
+					name: "Requires MC 1.8 / 1.21",
+					protocol: 772,
+				},
+				players: {
+					online: 32000,
+					max: 200000,
+				},
+			},
+			diagnostics: {
+				requested_host: "hypixel.net",
+				dns_addresses: ["104.17.71.15"],
+				java: {
+					edition: "java",
+					reachable: true,
+					host: "hypixel.net",
+					port: 25565,
+					version: "Requires MC 1.8 / 1.21",
+					protocol: 772,
+					latency: 24,
+				},
+				bedrock: {
+					edition: "bedrock",
+					reachable: false,
+					host: "hypixel.net",
+					port: 19132,
+					error_code: "timeout",
+					error_message:
+						"The server did not respond before the timeout.",
+				},
+			},
+		},
+	},
+	{
+		title: "Connection Diagnostics",
+		route: "diagnostics/<ip>",
+		description: (
+			<Typography
+				fontSize={16}
+				paddingLeft={2}
+				marginBottom={2}
+				paddingRight={2}
+			>
+				Returns DNS addresses, resolved SRV targets, port reachability,
+				protocol versions, latency, and actionable Java and Bedrock
+				connection errors.
+			</Typography>
+		),
+		response: {
+			requested_host: "minehut.gg",
+			dns_addresses: ["104.18.40.155", "172.64.147.101"],
+			java: {
+				edition: "java",
+				reachable: true,
+				host: "minehut.gg",
+				port: 25565,
+				resolved_host: "java-us.minehut.com",
+				resolved_port: 25565,
+				version: "Velocity 1.7.2-26.2",
+				protocol: 772,
+				latency: 19,
+			},
+			bedrock: {
+				edition: "bedrock",
+				reachable: false,
+				host: "minehut.gg",
+				port: 19132,
+				error_code: "timeout",
+				error_message: "The server did not respond before the timeout.",
+			},
+		},
+	},
+	{
 		title: "Java Server Status",
 		route: "status/java/<ip>",
 		description: (
