@@ -24,7 +24,7 @@ export default function Footer() {
           size="small"
           variant="outlined"
           color="secondary"
-          href="https://github.com/torch-minecraft/frontend"
+          href="https://github.com/tyruschuang/torch-minecraft"
           target="_blank"
           rel="noopener noreferrer"
           sx={{
