@@ -25,6 +25,12 @@ export default function Offline(props) {
         {props.data == null ? "25565" : props.data.port}
       </Typography>
     ),
+    Next_step: (
+      <Typography color="text.secondary" sx={{ lineHeight: 1.65 }}>
+        No valid status response arrived before the timeout. Open Connection
+        diagnostics to check the hostname, edition, and port.
+      </Typography>
+    ),
   };
 
   return renderComponents(components);

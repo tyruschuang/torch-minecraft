@@ -61,7 +61,7 @@ export default function Footer() {
             },
           }}
         >
-          View Source
+          View source
         </Button>
       </Container>
     </Box>

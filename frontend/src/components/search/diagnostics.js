@@ -33,7 +33,7 @@ function Probe({ probe }) {
         </Typography>
         <Chip
           size="small"
-          label={probe.reachable ? "Reachable" : "Unavailable"}
+          label={probe.reachable ? "Responded" : "No response"}
           color={probe.reachable ? "success" : "error"}
           variant="outlined"
         />
@@ -56,7 +56,7 @@ function Probe({ probe }) {
           },
         }}
       >
-        <dt>Target</dt>
+        <dt>Checked address</dt>
         <dd>
           {probe.host}:{probe.port}
         </dd>
@@ -148,7 +148,8 @@ export default function Diagnostics({ initialDiagnostics, ip }) {
         <Box>
           <Typography fontWeight={700}>Connection diagnostics</Typography>
           <Typography color="text.secondary" fontSize={13}>
-            DNS, ports, edition reachability, and protocol details
+            See where the address resolves and why each edition did or didn't
+            respond
           </Typography>
         </Box>
       </AccordionSummary>
@@ -156,19 +157,22 @@ export default function Diagnostics({ initialDiagnostics, ip }) {
         {loading && (
           <Box display="flex" alignItems="center" gap={1.5} py={2}>
             <CircularProgress size={22} />
-            <Typography color="text.secondary">Running probes…</Typography>
+            <Typography color="text.secondary">
+              Checking DNS and both editions…
+            </Typography>
           </Box>
         )}
         {error && (
           <Alert severity="error" variant="outlined">
-            Diagnostics could not run. Try expanding this section again.
+            Diagnostics couldn't run. Collapse this section, then open it to
+            retry.
           </Alert>
         )}
         {diagnostics && (
           <>
             <Box sx={{ mb: 2 }}>
               <Typography color="text.secondary" fontSize={13}>
-                DNS addresses
+                Resolved addresses
               </Typography>
               <Typography
                 fontFamily='"Fira Mono", monospace'
@@ -177,7 +181,7 @@ export default function Diagnostics({ initialDiagnostics, ip }) {
               >
                 {diagnostics.dns_addresses?.length
                   ? diagnostics.dns_addresses.join(", ")
-                  : diagnostics.dns_error || "No addresses returned"}
+                  : diagnostics.dns_error || "No DNS addresses were returned."}
               </Typography>
             </Box>
             <Box

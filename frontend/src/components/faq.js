@@ -77,8 +77,8 @@ export default function Faq() {
       <Title compact />
       <Info
         id="faq-heading"
-        title="FAQ"
-        subtitle="Straight answers to common questions about Torch and Minecraft server status."
+        title="Help & FAQ"
+        subtitle="Search setup, status results, troubleshooting, saved servers, and API use."
       />
       {questions.map((question, index) => (
         <FaqSection

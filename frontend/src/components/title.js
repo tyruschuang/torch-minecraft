@@ -73,7 +73,8 @@ export default function Title({ compact = false }) {
         <Box component="span" color="primary.light" fontWeight={600}>
           dark
         </Box>
-        . Check any Java or Bedrock Minecraft server in seconds.
+        . Check live Minecraft server status, detect the edition, and
+        troubleshoot connection problems.
       </Typography>
     </Box>
   );

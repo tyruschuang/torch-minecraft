@@ -26,13 +26,13 @@ export default function NotFound() {
           variant="h2"
           sx={{ fontSize: { xs: 32, sm: 40 }, textWrap: "balance" }}
         >
-          This route went offline.
+          Page not found.
         </Typography>
         <Typography
           color="text.secondary"
           sx={{ mt: 1.5, maxWidth: 480, lineHeight: 1.7 }}
         >
-          The page does not exist, but the server lookup is still ready.
+          That URL doesn't point to a Torch page. Return home to check a server.
         </Typography>
         <Button
           component={RouterLink}
@@ -41,7 +41,7 @@ export default function NotFound() {
           variant="contained"
           size="large"
         >
-          Back to server search
+          Go to server search
         </Button>
       </Box>
     </Container>

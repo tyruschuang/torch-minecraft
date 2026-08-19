@@ -70,7 +70,7 @@ export default function Search({
           value={type}
           onChange={(event) => setType(event.target.value)}
         >
-          <MenuItem value="auto">Auto detect</MenuItem>
+          <MenuItem value="auto">Auto-detect</MenuItem>
           <MenuItem value="java">Java</MenuItem>
           <MenuItem value="bedrock">Bedrock</MenuItem>
         </Select>

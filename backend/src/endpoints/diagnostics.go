@@ -193,16 +193,16 @@ func diagnosticError(err error) (string, string) {
 
 	switch {
 	case errors.As(err, &dnsError):
-		return "dns", "The hostname could not be resolved."
+		return "dns", "The hostname did not resolve. Check its spelling and DNS records."
 	case errors.As(err, &networkError) && networkError.Timeout():
-		return "timeout", "The server did not respond before the timeout."
+		return "timeout", "No response arrived before the timeout. Check the edition, port, and firewall."
 	case errors.Is(err, syscall.ECONNREFUSED):
-		return "refused", "The server refused the connection."
+		return "refused", "The host refused this connection. Confirm that the server is running on this port."
 	case strings.Contains(strings.ToLower(err.Error()), "unexpected"),
 		strings.Contains(strings.ToLower(err.Error()), "invalid"):
-		return "protocol", "The server returned an invalid status response."
+		return "protocol", "The server replied, but its status response was not valid for this edition."
 	default:
-		return "unreachable", "The server could not be reached."
+		return "unreachable", "Torch could not reach this address. Check the hostname, port, and network rules."
 	}
 }
 

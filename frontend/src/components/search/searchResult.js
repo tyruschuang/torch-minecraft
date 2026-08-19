@@ -158,8 +158,8 @@ export default function SearchResult() {
             },
           }}
         >
-          Torch could not reach the status API. Wait a moment, then try your
-          search again.
+          Torch couldn't complete this check. The API may be temporarily
+          unavailable. Wait a moment, then try again.
         </Alert>
       )}
 
@@ -198,7 +198,7 @@ export default function SearchResult() {
                 })
               }
             >
-              {isSaved ? "Remove saved" : "Save server"}
+              {isSaved ? "Remove from saved" : "Save server"}
             </Button>
           </Box>
           <Paper

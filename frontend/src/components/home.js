@@ -56,7 +56,7 @@ function ServerList({ items, type }) {
             >
               <Chip
                 color={type === "java" ? "primary" : "secondary"}
-                label={type}
+                label={type === "java" ? "Java" : "Bedrock"}
                 variant="outlined"
                 size="small"
                 sx={{
@@ -128,7 +128,13 @@ function SavedServerList({ items }) {
               }}
             >
               <Chip
-                label={server.type}
+                label={
+                  server.type === "java"
+                    ? "Java"
+                    : server.type === "bedrock"
+                      ? "Bedrock"
+                      : "Auto"
+                }
                 variant="outlined"
                 size="small"
                 color={
@@ -197,7 +203,7 @@ export default function Home() {
             color="text.secondary"
             sx={{ mb: 3, maxWidth: 680, lineHeight: 1.65 }}
           >
-            Your shortcuts stay in this browser and never leave your device.
+            Stored in this browser only—no account required.
           </Typography>
           <SavedServerList items={savedServers} />
         </Box>
@@ -220,8 +226,7 @@ export default function Home() {
           color="text.secondary"
           sx={{ mb: 3, maxWidth: 680, lineHeight: 1.65 }}
         >
-          Pick a known server to see the full status response, or enter any
-          address above.
+          Open a sample result, or enter any server address above.
         </Typography>
         <Grid2 container spacing={2}>
           <ServerList items={servers.java.slice(0, 4)} type="java" />
@@ -242,7 +247,7 @@ export default function Home() {
         <Info
           id="about-heading"
           title="About Torch"
-          subtitle="A focused Minecraft server lookup tool with a public API."
+          subtitle="Live status, faithful MOTDs, practical diagnostics, and a public API."
         />
         <Stack
           spacing={2}
@@ -259,9 +264,9 @@ export default function Home() {
             connection fails.
           </Typography>
           <Typography color="inherit" lineHeight="inherit">
-            The interface is built with React and Material UI. The Go API talks
-            directly to Minecraft servers using their status protocols, then
-            briefly caches responses to keep repeat lookups fast.
+            Results preserve the colors and formatting advertised in the
+            Minecraft server list. Status responses are cached briefly to keep
+            repeat lookups fast without hiding meaningful changes.
           </Typography>
           <Typography color="inherit" lineHeight="inherit">
             Developers can use the{" "}
