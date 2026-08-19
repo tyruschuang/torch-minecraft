@@ -60,6 +60,7 @@ export default function JavaResult(props) {
         minHeight={60}
         display="flex"
         alignItems="center"
+        justifyContent="center"
         sx={{
           overflow: "hidden",
           border: 1,

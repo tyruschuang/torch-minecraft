@@ -41,6 +41,7 @@ export default function BedrockResult(props) {
         minHeight={60}
         display="flex"
         alignItems="center"
+        justifyContent="center"
         sx={{ overflow: "hidden", color: "#ffffff" }}
       >
         <MinecraftFormatted value={data.motd} />

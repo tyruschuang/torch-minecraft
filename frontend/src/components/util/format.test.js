@@ -33,3 +33,19 @@ it("renders server text as text rather than HTML", () => {
   expect(markup).toContain("&lt;img src=x&gt;");
   expect(markup).not.toContain("<img");
 });
+
+it("reproduces Minecraft wrapping markers without changing leading alignment", () => {
+  const markup = renderToStaticMarkup(
+    <MinecraftFormatted
+      value={{
+        segments: [
+          { text: "        First line", styles: [] },
+          { text: "          Second line", styles: [] },
+        ],
+      }}
+    />,
+  );
+
+  expect(markup).toContain("        First line");
+  expect(markup).toContain("\nSecond line");
+});

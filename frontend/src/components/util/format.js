@@ -67,14 +67,37 @@ function obfuscate(text, frame) {
   ).join("");
 }
 
+function preserveMinecraftLineBreaks(segments) {
+  let lineHasContent = false;
+
+  return segments.map((segment) => {
+    let text = segment.text;
+    if (lineHasContent) {
+      text = text.replace(/^ {8,}(?=\S)/, "\n");
+    }
+
+    for (const character of text) {
+      if (character === "\n") {
+        lineHasContent = false;
+      } else if (!/\s/.test(character)) {
+        lineHasContent = true;
+      }
+    }
+
+    return { ...segment, text };
+  });
+}
+
 export default function MinecraftFormatted({ value }) {
   const [frame, setFrame] = useState(0);
   const segments = useMemo(() => {
     if (Array.isArray(value?.segments) && value.segments.length) {
-      return value.segments.map((segment, index) => ({
-        key: `segment-${index}`,
-        ...segment,
-      }));
+      return preserveMinecraftLineBreaks(
+        value.segments.map((segment, index) => ({
+          key: `segment-${index}`,
+          ...segment,
+        })),
+      );
     }
 
     try {
@@ -83,9 +106,11 @@ export default function MinecraftFormatted({ value }) {
         .sort((left, right) => Number(left) - Number(right))
         .map((key) => ({ key, ...parsed[key] }))
         .filter((segment) => typeof segment.text === "string");
-      return parsedSegments.length
-        ? parsedSegments
-        : [{ key: "fallback", text: value?.clean || "", styles: [] }];
+      return preserveMinecraftLineBreaks(
+        parsedSegments.length
+          ? parsedSegments
+          : [{ key: "fallback", text: value?.clean || "", styles: [] }],
+      );
     } catch {
       return [{ key: "fallback", text: value?.clean || "", styles: [] }];
     }
@@ -110,7 +135,13 @@ export default function MinecraftFormatted({ value }) {
   }, [hasObfuscatedText]);
 
   return (
-    <span style={{ whiteSpace: "pre" }}>
+    <span
+      style={{
+        display: "block",
+        width: "min(100%, 420px)",
+        whiteSpace: "pre",
+      }}
+    >
       {segments.map((segment) => {
         const styles = Array.isArray(segment.styles) ? segment.styles : [];
         const text = styles.includes("obfuscated")
