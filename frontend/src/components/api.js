@@ -11,6 +11,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useState } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/default-highlight";
 import { stackoverflowDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { apiBaseUrl, endpoints, sections } from "../app/api";
@@ -48,7 +49,7 @@ function endpointId(title) {
   return `endpoint-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 }
 
-function APIQuickStart() {
+function APIQuickStart({ onSelectEndpoint }) {
   return (
     <Box
       component="aside"
@@ -135,6 +136,10 @@ function APIQuickStart() {
               key={endpoint.title}
               component="a"
               href={`#${endpointId(endpoint.title)}`}
+              onClick={(event) => {
+                event.preventDefault();
+                onSelectEndpoint(endpointId(endpoint.title));
+              }}
               sx={{
                 py: 0.75,
                 color: "text.secondary",
@@ -158,7 +163,15 @@ function APIQuickStart() {
   );
 }
 
-function APIEndpoint({ description, id, response, route, title }) {
+function APIEndpoint({
+  description,
+  expanded,
+  id,
+  onExpandedChange,
+  response,
+  route,
+  title,
+}) {
   const endpointUrl = `${apiBaseUrl}/${route}`;
 
   return (
@@ -166,6 +179,8 @@ function APIEndpoint({ description, id, response, route, title }) {
       id={id}
       disableGutters
       elevation={0}
+      expanded={expanded}
+      onChange={(_, isExpanded) => onExpandedChange(isExpanded ? id : null)}
       sx={{
         scrollMarginTop: 96,
         mb: 1.5,
@@ -300,6 +315,23 @@ function APIEndpoint({ description, id, response, route, title }) {
 }
 
 export default function API() {
+  const [expandedEndpoint, setExpandedEndpoint] = useState(
+    () => window.location.hash.slice(1) || null,
+  );
+
+  const selectEndpoint = (id) => {
+    setExpandedEndpoint(id);
+    window.history.replaceState(null, "", `#${id}`);
+    window.requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      });
+    });
+  };
+
   return (
     <Container maxWidth="lg">
       <Title compact />
@@ -328,7 +360,7 @@ export default function API() {
             />
           ))}
         </Box>
-        <APIQuickStart />
+        <APIQuickStart onSelectEndpoint={selectEndpoint} />
       </Box>
       <Info
         id="endpoints-heading"
@@ -339,6 +371,8 @@ export default function API() {
         <APIEndpoint
           key={endpoint.title}
           id={endpointId(endpoint.title)}
+          expanded={expandedEndpoint === endpointId(endpoint.title)}
+          onExpandedChange={setExpandedEndpoint}
           title={endpoint.title}
           route={endpoint.route}
           description={endpoint.description}
